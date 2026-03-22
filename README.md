@@ -6,22 +6,6 @@
 
 ---
 
-## Содержание
-
-- [Установка](#установка)
-- [Интерфейс редактора](#интерфейс-редактора)
-- [Режим «Структура»](#режим-структура)
-- [Режим «Визуальный»](#режим-визуальный)
-- [Режим «Исходник»](#режим-исходник)
-- [Панель форматирования](#панель-форматирования)
-- [История изменений](#история-изменений)
-- [Операции с элементами](#операции-с-элементами)
-- [Горячие клавиши](#горячие-клавиши)
-- [Сохранение](#сохранение)
-- [Часто задаваемые вопросы](#часто-задаваемые-вопросы)
-
----
-
 ## Установка
 
 Редактор подключается через плагин MODX на событие `OnManagerPageBeforeRender`:
@@ -95,6 +79,9 @@ if ($modx->event->name == 'OnManagerPageBeforeRender') {
 
 ### Вид «Поля»
 
+![StructEditor](https://raw.githubusercontent.com/commeta/StructEditor/refs/heads/main/img/struct.png "StructEditor")
+
+
 Структура отображается в виде свёрнутых / развёрнутых секций-карточек:
 
 ```
@@ -140,6 +127,9 @@ if ($modx->event->name == 'OnManagerPageBeforeRender') {
 
 ### Вид «Дерево»
 
+![StructEditor tree](https://raw.githubusercontent.com/commeta/StructEditor/refs/heads/main/img/struct-tree.png "StructEditor tree")
+
+
 ```
 ┌──────────────────────────────────────────────────────────────┐
 │ ▶ <div>  .container  3 эл.           ⎘  ↑  ↓  ✕             │
@@ -168,6 +158,9 @@ if ($modx->event->name == 'OnManagerPageBeforeRender') {
 ---
 
 ## Режим «Визуальный»
+
+![StructEditor visual](https://raw.githubusercontent.com/commeta/StructEditor/refs/heads/main/img/visual.png "StructEditor visual")
+
 
 Страница отображается в окне предпросмотра. Редактируемые элементы подсвечены пунктирной рамкой:
 
@@ -229,6 +222,9 @@ if ($modx->event->name == 'OnManagerPageBeforeRender') {
 ---
 
 ## Режим «Исходник»
+
+![StructEditor source](https://raw.githubusercontent.com/commeta/StructEditor/refs/heads/main/img/source.png "StructEditor source")
+
 
 Прямой доступ к HTML-коду страницы. Подходит для опытных пользователей, которым нужно вставить готовый HTML-блок или исправить разметку вручную.
 
