@@ -4,6 +4,8 @@
 
 **StructEditor** — это дополнение к административной панели MODX, которое заменяет стандартное поле ввода HTML-кода удобным интерфейсом с тремя режимами редактирования. Редактор не требует знания HTML — контент-менеджер работает с полями, кнопками и визуальным представлением страницы.
 
+![StructEditor](https://raw.githubusercontent.com/commeta/StructEditor/refs/heads/main/img/full-screen.png "StructEditor")
+
 ---
 
 ## Преимущества StructEditor
