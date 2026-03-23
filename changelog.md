@@ -1,5 +1,11 @@
 # Change Log
 
+## 23.03.2026
+
+Вся логика экспорта обёрнута в if (W._sev8testMode) { ... } — в продакшне этот флаг никогда не выставляется, код мёртв.
+
+Перед загрузкой struct-editor.js выставляется window._sev8testMode = true. Патч дописывает в конец IIFE блок экспорта window._sev8 = { tokenize, detokenize, simpleHash, parseAndMark, serialize, fmtHTML, ... }. Unit-тесты вызывают se().tokenize(...) — это реальная функция из struct-editor.js.
+
 ## 22.03.2026
 
 FIX #1  
