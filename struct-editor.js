@@ -2070,4 +2070,60 @@
     }, 15000);
   }
 
+  /* ════════ TEST-MODE EXPORT ════════════════════════════════════════════════
+   * Activated ONLY when  window._sev8testMode === true  is set before this
+   * script loads (see struct-editor.html test stand).
+   * Has ZERO effect in production — never set this flag on a live MODX site.
+   * ═══════════════════════════════════════════════════════════════════════ */
+  if (W._sev8testMode) {
+    W._sev8 = {
+      /* ── pure / stateless helpers ────────────────────────────────────── */
+      simpleHash: simpleHash,
+      tokenize: tokenize,
+      detokenize: detokenize,
+      fmtHTML: fmtHTML,   // internally saves/restores S.tokens — safe
+      /* ── stateful (modify S — use only from integration tests) ─────── */
+      parseAndMark: parseAndMark,
+      serialize: serialize,
+      syncNow: syncNow,
+      cleanSpaces: cleanSpaces,
+      histPush: histPush,
+      histUndo: histUndo,
+      histRedo: histRedo,
+      histApply: histApply,
+      histUpdateBtns: histUpdateBtns,
+      buildTreeView2: buildTreeView2,
+      /* ── live config & state references ─────────────────────────────── */
+      CFG: CFG,
+      C: C,
+      S: S,
+      /* ── unit-safe wrappers: save/restore S so unit tests cannot       ──
+         corrupt the mounted editor state.  Use these in Unit: suites.   ── */
+      /**
+       * Parses html like parseAndMark() but saves and restores S.*
+       * Returns { doc, map, tok } — pass the whole object to serializeUnit().
+       */
+      parseAndMarkUnit: function (html) {
+        var sv = { doc: S.doc, map: S.map, idx: S.idx, tok: S.tokens.slice() };
+        parseAndMark(html);
+        var r = { doc: S.doc, map: S.map, tok: S.tokens.slice() };
+        S.doc = sv.doc; S.map = sv.map; S.idx = sv.idx; S.tokens = sv.tok;
+        return r;
+      },
+      /**
+       * Serializes the result of parseAndMarkUnit() without touching S.
+       * @param {object} r  – return value of parseAndMarkUnit()
+       */
+      serializeUnit: function (r) {
+        if (!r || !r.doc) return '';
+        var sv = { doc: S.doc, map: S.map, tok: S.tokens.slice() };
+        S.doc = r.doc; S.map = r.map; S.tokens = r.tok || [];
+        var html = serialize();
+        S.doc = sv.doc; S.map = sv.map; S.tokens = sv.tok;
+        return html;
+      },
+    };
+    L('Test-mode: window._sev8 exported');
+  }
+
 })(window, document);
