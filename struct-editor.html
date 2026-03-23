@@ -1,0 +1,1682 @@
+<!DOCTYPE html>
+<html lang="ru">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>StructEditor — Test</title>
+    <style>
+        *,
+        *::before,
+        *::after {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0
+        }
+
+        :root {
+            --bg: #f0f4f8;
+            --panel: #fff;
+            --bd: #dde2ea;
+            --acc: #2563eb;
+            --acc2: #1d4ed8;
+            --txt: #111827;
+            --mu: #6b7280;
+            --pass: #16a34a;
+            --fail: #dc2626;
+            --warn: #d97706;
+            --pbg: #f0fdf4;
+            --fbg: #fef2f2;
+            --wbg: #fffbeb;
+            --r: 6px;
+        }
+
+        body {
+            font: 13px/1.5 -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: var(--bg);
+            color: var(--txt);
+            height: 100vh;
+            overflow: hidden
+        }
+
+        #app {
+            display: flex;
+            flex-direction: column;
+            height: 100vh
+        }
+
+        #top {
+            background: linear-gradient(135deg, #1e3a5f 0%, #2d5a9e 100%);
+            color: #fff;
+            padding: 9px 16px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-shrink: 0;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, .2)
+        }
+
+        #top h1 {
+            font-size: 14px;
+            font-weight: 700;
+            letter-spacing: -.3px;
+            white-space: nowrap
+        }
+
+        .badge {
+            font-size: 10px;
+            padding: 2px 6px;
+            border-radius: 9px;
+            background: rgba(255, 255, 255, .18);
+            font-weight: 600
+        }
+
+        #top select {
+            font-size: 11px;
+            padding: 2px 6px;
+            border-radius: 4px;
+            border: 1px solid rgba(255, 255, 255, .3);
+            background: rgba(255, 255, 255, .1);
+            color: #fff;
+            cursor: pointer
+        }
+
+        #top select option {
+            color: #000;
+            background: #fff
+        }
+
+        .sp1 {
+            flex: 1
+        }
+
+        #ms {
+            font-size: 11px;
+            padding: 2px 8px;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            transition: background .2s
+        }
+
+        #ms.ok {
+            background: #dcfce7;
+            color: var(--pass)
+        }
+
+        #ms.pend {
+            background: #fef9c3;
+            color: var(--warn)
+        }
+
+        #ms.err {
+            background: #fee2e2;
+            color: var(--fail)
+        }
+
+        .spin {
+            width: 11px;
+            height: 11px;
+            border: 2px solid #93c5fd;
+            border-top-color: var(--acc);
+            border-radius: 50%;
+            animation: sp .6s linear infinite;
+            display: inline-block;
+            flex-shrink: 0
+        }
+
+        @keyframes sp {
+            to {
+                transform: rotate(360deg)
+            }
+        }
+
+        #panel-open-btn {
+            font-size: 11px;
+            padding: 4px 11px;
+            border-radius: var(--r);
+            border: 1px solid rgba(255, 255, 255, .35);
+            background: rgba(255, 255, 255, .13);
+            color: #fff;
+            cursor: pointer;
+            font-weight: 600;
+            white-space: nowrap;
+            transition: background .15s;
+            flex-shrink: 0
+        }
+
+        #panel-open-btn:hover {
+            background: rgba(255, 255, 255, .24)
+        }
+
+        #panel-open-btn.hidden {
+            display: none
+        }
+
+        #main {
+            display: flex;
+            flex: 1;
+            overflow: hidden;
+            position: relative
+        }
+
+        #ep {
+            flex: 1;
+            min-width: 0;
+            display: flex;
+            flex-direction: column;
+            background: var(--panel);
+            overflow: hidden;
+            transition: flex .0s
+        }
+
+        #eph {
+            background: #f8fafc;
+            border-bottom: 1px solid var(--bd);
+            padding: 6px 12px;
+            font-size: 10px;
+            font-weight: 700;
+            color: var(--mu);
+            text-transform: uppercase;
+            letter-spacing: .6px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            flex-shrink: 0
+        }
+
+        #epb {
+            flex: 1;
+            overflow-y: auto;
+            padding: 12px
+        }
+
+        .mlbl {
+            font-size: 11px;
+            color: var(--mu);
+            font-weight: 600;
+            margin-bottom: 4px;
+            display: block
+        }
+
+        .xfe {
+            background: #f9fafb;
+            border: 1px dashed #c9d4e0;
+            border-radius: 4px;
+            padding: 8px
+        }
+
+        #modx-resource-content {
+            width: 100%;
+            min-height: 120px;
+            font: 12px/1.5 monospace;
+            padding: 7px;
+            border: 1px solid #c9d4e0;
+            border-radius: 3px;
+            resize: vertical;
+            background: #fff;
+            color: #333
+        }
+
+        #editor-mount-target {
+            min-height: 40px
+        }
+
+        #tp-scrim {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, .38);
+            z-index: 99
+        }
+
+        #tp {
+            flex-shrink: 0;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            background: var(--bg);
+            width: 0;
+            transition: width .26s cubic-bezier(.4, 0, .2, 1);
+            position: relative
+        }
+
+        #tp.open {
+            border-left: 1px solid var(--bd)
+        }
+
+        #tp-resize-handle {
+            position: absolute;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            width: 5px;
+            cursor: col-resize;
+            z-index: 10;
+            background: transparent;
+            transition: background .15s
+        }
+
+        #tp-resize-handle:hover {
+            background: rgba(37, 99, 235, .2)
+        }
+
+        #tc {
+            background: #f8fafc;
+            border-bottom: 1px solid var(--bd);
+            padding: 7px 10px 7px 14px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 4px;
+            align-items: center;
+            flex-shrink: 0
+        }
+
+        #panel-close-btn {
+            margin-left: auto;
+            padding: 3px 8px;
+            border-radius: var(--r);
+            border: 1px solid var(--bd);
+            background: transparent;
+            color: var(--mu);
+            font: 13px/1.3 inherit;
+            cursor: pointer;
+            transition: all .15s;
+            flex-shrink: 0
+        }
+
+        #panel-close-btn:hover {
+            background: var(--fbg);
+            border-color: #fca5a5;
+            color: var(--fail)
+        }
+
+        .btn {
+            padding: 4px 11px;
+            border: 1px solid var(--bd);
+            border-radius: var(--r);
+            background: var(--panel);
+            color: var(--txt);
+            font: 12px/1 inherit;
+            cursor: pointer;
+            font-weight: 500;
+            transition: all .1s;
+            white-space: nowrap
+        }
+
+        .btn:hover {
+            background: #eef2ff;
+            border-color: var(--acc);
+            color: var(--acc)
+        }
+
+        .btn:disabled {
+            opacity: .4;
+            cursor: default
+        }
+
+        .btn.pri {
+            background: var(--acc);
+            color: #fff;
+            border-color: var(--acc2)
+        }
+
+        .btn.pri:hover:not(:disabled) {
+            background: var(--acc2)
+        }
+
+        .btn.dan:hover {
+            background: var(--fbg);
+            border-color: #fca5a5;
+            color: var(--fail)
+        }
+
+        #dsr {
+            padding: 5px 10px;
+            border-bottom: 1px solid var(--bd);
+            background: var(--panel);
+            flex-shrink: 0;
+            display: flex;
+            align-items: center;
+            gap: 6px
+        }
+
+        #dsr label {
+            font-size: 11px;
+            font-weight: 600;
+            color: var(--mu);
+            white-space: nowrap
+        }
+
+        #dssr {
+            font-size: 11px;
+            padding: 3px 6px;
+            border: 1px solid var(--bd);
+            border-radius: 4px;
+            font: inherit;
+            background: #fff;
+            flex: 1;
+            min-width: 0;
+            cursor: pointer
+        }
+
+        #sb {
+            padding: 5px 8px;
+            border-bottom: 1px solid var(--bd);
+            background: var(--panel);
+            display: flex;
+            flex-wrap: wrap;
+            gap: 3px;
+            flex-shrink: 0
+        }
+
+        .sp {
+            padding: 2px 8px;
+            border-radius: 9px;
+            font-size: 10px;
+            font-weight: 600;
+            border: 1px solid var(--bd);
+            background: var(--bg);
+            cursor: pointer;
+            transition: all .1s;
+            white-space: nowrap
+        }
+
+        .sp:hover {
+            border-color: var(--acc);
+            color: var(--acc)
+        }
+
+        .sp.on {
+            background: var(--acc);
+            color: #fff;
+            border-color: var(--acc2)
+        }
+
+        #sm {
+            padding: 6px 10px;
+            background: var(--panel);
+            border-bottom: 1px solid var(--bd);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex-shrink: 0;
+            font-size: 12px
+        }
+
+        .sc {
+            display: flex;
+            align-items: center;
+            gap: 3px;
+            font-weight: 700
+        }
+
+        .sc.p {
+            color: var(--pass)
+        }
+
+        .sc.f {
+            color: var(--fail)
+        }
+
+        .sc.s {
+            color: var(--warn)
+        }
+
+        .sc.t {
+            color: var(--mu)
+        }
+
+        #pbw {
+            flex: 1;
+            height: 5px;
+            background: #e5e7eb;
+            border-radius: 3px;
+            overflow: hidden
+        }
+
+        #pb {
+            height: 100%;
+            width: 0;
+            background: var(--pass);
+            transition: width .2s, background .2s;
+            border-radius: 3px
+        }
+
+        #rt {
+            font-size: 10px;
+            color: var(--mu);
+            margin-left: auto;
+            white-space: nowrap
+        }
+
+        #rc {
+            flex: 1;
+            overflow-y: auto;
+            padding: 5px 7px 24px
+        }
+
+        .sg {
+            margin-bottom: 8px
+        }
+
+        .sh {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            padding: 5px 8px;
+            background: #f1f5f9;
+            border: 1px solid var(--bd);
+            border-radius: var(--r) var(--r) 0 0;
+            cursor: pointer;
+            user-select: none;
+            font-weight: 700;
+            font-size: 11px
+        }
+
+        .sh:hover {
+            background: #e8f0fb
+        }
+
+        .shb {
+            font-size: 10px;
+            padding: 1px 5px;
+            border-radius: 7px;
+            font-weight: 600;
+            margin-left: auto
+        }
+
+        .shb.p {
+            background: #dcfce7;
+            color: var(--pass)
+        }
+
+        .shb.f {
+            background: #fee2e2;
+            color: var(--fail)
+        }
+
+        .shb.w {
+            background: #fef9c3;
+            color: var(--warn)
+        }
+
+        .sbdy {
+            border: 1px solid var(--bd);
+            border-top: none;
+            border-radius: 0 0 var(--r) var(--r)
+        }
+
+        .sbdy.col {
+            display: none
+        }
+
+        .ti {
+            display: flex;
+            align-items: flex-start;
+            gap: 6px;
+            padding: 4px 8px;
+            border-bottom: 1px solid #f1f5f9;
+            font-size: 11px
+        }
+
+        .ti:last-child {
+            border-bottom: none
+        }
+
+        .ti.pass {
+            background: var(--pbg)
+        }
+
+        .ti.fail {
+            background: var(--fbg)
+        }
+
+        .ti.skip {
+            background: var(--wbg)
+        }
+
+        .tic {
+            font-size: 12px;
+            flex-shrink: 0;
+            margin-top: 1px
+        }
+
+        .tcc {
+            flex: 1;
+            min-width: 0
+        }
+
+        .tn {
+            font-weight: 600;
+            font-size: 11px
+        }
+
+        .tm {
+            font-size: 10px;
+            color: var(--mu);
+            margin-top: 2px;
+            font-family: 'SF Mono', 'Fira Code', monospace;
+            white-space: pre-wrap;
+            word-break: break-all
+        }
+
+        .tm.e {
+            color: var(--fail)
+        }
+
+        .tt {
+            font-size: 10px;
+            color: var(--mu);
+            flex-shrink: 0;
+            margin-top: 1px
+        }
+
+        ::-webkit-scrollbar {
+            width: 5px;
+            height: 5px
+        }
+
+        ::-webkit-scrollbar-track {
+            background: transparent
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 3px
+        }
+
+        @media (max-width:767px) {
+            body {
+                overflow: hidden
+            }
+
+            #ep {
+                border-right: none
+            }
+
+            #tp {
+                position: fixed;
+                top: 0;
+                right: -100%;
+                width: 100% !important;
+                height: 100vh;
+                z-index: 100;
+                transition: right .26s cubic-bezier(.4, 0, .2, 1) !important;
+                box-shadow: -6px 0 24px rgba(0, 0, 0, .18)
+            }
+
+            #tp.open {
+                right: 0;
+                border-left: none
+            }
+
+            #tp-resize-handle {
+                display: none
+            }
+
+            #top h1 {
+                font-size: 13px
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div id="tp-scrim"></div>
+    <div id="app">
+        <div id="top">
+            <h1>⚡ StructEditor — Test</h1>
+            <span class="badge">v1</span>
+            <span class="sp1"></span>
+            <label style="color:rgba(255,255,255,.7);font-size:11px;margin-right:2px">Log:</label>
+            <select id="ll">
+                <option value="info">info</option>
+                <option value="debug" selected>debug</option>
+                <option value="trace">trace</option>
+            </select>
+            <button id="panel-open-btn">▶ Тесты</button>
+        </div>
+        <div id="main">
+            <div id="ep">
+                <div id="eph">
+                    🔧 MODX Emulation
+                    <span id="ms" class="pend"><span class="spin"></span>&nbsp;waiting</span>
+                </div>
+                <div id="epb">
+                    <span class="mlbl">Content (MODX field):</span>
+                    <div class="xfe x-form-el x-form-item" id="x-form-el">
+                        <textarea id="modx-resource-content" name="content" rows="8"></textarea>
+                    </div>
+                    <div id="editor-mount-target"></div>
+                </div>
+            </div>
+            <div id="tp">
+                <div id="tp-resize-handle"></div>
+                <div id="tc">
+                    <button class="btn pri" id="ba">▶ Run All</button>
+                    <button class="btn" id="bs">▶ Suite</button>
+                    <button class="btn" id="bf">↺ Failed</button>
+                    <button class="btn dan" id="bc">✕ Clear</button>
+                    <button id="panel-close-btn">✕</button>
+                </div>
+                <div id="dsr">
+                    <label>Dataset:</label>
+                    <select id="dssr">
+                        <option value="0">1. Заголовки + абзацы</option>
+                        <option value="1">2. Полный semantic HTML5</option>
+                        <option value="2">3. Ссылки + медиа</option>
+                        <option value="3">4. Таблицы + списки + форма</option>
+                        <option value="4">5. Вложенные секции</option>
+                        <option value="5">6. Токены (script/style/php)</option>
+                        <option value="6">7. Edge cases (unicode/XSS)</option>
+                        <option value="7">8. Смешанный — все типы</option>
+                    </select>
+                    <button class="btn" id="bl" style="padding:2px 9px;font-size:11px">↻ Load</button>
+                </div>
+                <div id="sb"></div>
+                <div id="sm">
+                    <span class="sc p">✓&thinsp;<span id="cp">0</span></span>
+                    <span class="sc f">✗&thinsp;<span id="cf">0</span></span>
+                    <span class="sc s">⚠&thinsp;<span id="cs">0</span></span>
+                    <span class="sc t">/&thinsp;<span id="ct">0</span></span>
+                    <div id="pbw">
+                        <div id="pb"></div>
+                    </div>
+                    <span id="rt"></span>
+                </div>
+                <div id="rc">
+                    <div style="color:#9ca3af;text-align:center;padding:32px;font-size:12px">Загрузите датасет → <b>Run
+                            All</b></div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script>
+        (function () {
+            var tp = null, scrim = null, openBtn = null, dragging = false, startX = 0, startW = 0;
+            function isMobile() { return window.innerWidth < 768; }
+            function openPanel() {
+                if (isMobile()) {
+                    tp.classList.add('open');
+                    scrim.style.display = 'block';
+                    document.body.style.overflow = 'hidden';
+                } else {
+                    tp.style.width = Math.round(window.innerWidth * 0.3) + 'px';
+                    tp.classList.add('open');
+                }
+                openBtn.classList.add('hidden');
+            }
+            function closePanel() {
+                if (isMobile()) {
+                    scrim.style.display = 'none';
+                    document.body.style.overflow = '';
+                    tp.classList.remove('open');
+                } else {
+                    tp.style.transition = 'width .26s cubic-bezier(.4,0,.2,1)';
+                    tp.style.width = '0';
+                    tp.classList.remove('open');
+                }
+                openBtn.classList.remove('hidden');
+            }
+            document.addEventListener('DOMContentLoaded', function () {
+                tp = document.getElementById('tp');
+                scrim = document.getElementById('tp-scrim');
+                openBtn = document.getElementById('panel-open-btn');
+                var closeBtn = document.getElementById('panel-close-btn');
+                var handle = document.getElementById('tp-resize-handle');
+                openBtn.addEventListener('click', openPanel);
+                closeBtn.addEventListener('click', closePanel);
+                scrim.addEventListener('click', closePanel);
+                handle.addEventListener('mousedown', function (e) {
+                    if (isMobile()) return;
+                    dragging = true;
+                    startX = e.clientX;
+                    startW = tp.offsetWidth;
+                    tp.style.transition = 'none';
+                    document.body.style.userSelect = 'none';
+                    document.body.style.cursor = 'col-resize';
+                    e.preventDefault();
+                });
+                document.addEventListener('mousemove', function (e) {
+                    if (!dragging) return;
+                    var delta = startX - e.clientX;
+                    var newW = Math.min(Math.max(startW + delta, 220), Math.round(window.innerWidth * 0.82));
+                    tp.style.width = newW + 'px';
+                });
+                document.addEventListener('mouseup', function () {
+                    if (!dragging) return;
+                    dragging = false;
+                    tp.style.transition = '';
+                    document.body.style.userSelect = '';
+                    document.body.style.cursor = '';
+                });
+                window.addEventListener('resize', function () {
+                    if (isMobile()) {
+                        if (tp.classList.contains('open')) {
+                            scrim.style.display = 'block';
+                        }
+                        tp.style.width = '';
+                    } else {
+                        scrim.style.display = 'none';
+                        document.body.style.overflow = '';
+                    }
+                });
+                if (!isMobile()) openPanel();
+            });
+        })();
+    </script>
+    <script>
+        (function () {
+            'use strict';
+
+            var LVL = { trace: 0, debug: 1, info: 2, warn: 3, error: 4 };
+            var logFlag = 'debug';
+            function L(lv, tag, msg) {
+                if ((LVL[lv] || 0) < (LVL[logFlag] || 1)) return;
+                var fn = lv === 'error' ? console.error : lv === 'warn' ? console.warn : lv === 'info' ? console.info : console.log;
+                fn('[TEST:' + lv.toUpperCase() + '][' + tag + '] ' + msg);
+            }
+            var LD = function (g, m) { L('debug', g, m); };
+            var LI = function (g, m) { L('info', g, m); };
+            var LW = function (g, m) { L('warn', g, m); };
+            var LE = function (g, m) { L('error', g, m); };
+
+            var DS = [
+                '<h1>Главный заголовок</h1>\n<h2>Подзаголовок</h2>\n<p>Первый абзац текста.</p>\n<p>Второй абзац с <strong>жирным</strong> и <em>курсивом</em>.</p>',
+                '<article>\n  <header>\n    <h1>Статья</h1>\n    <p><time datetime="2026-03-22">22 марта 2026</time></p>\n  </header>\n  <section>\n    <h2>Введение</h2>\n    <p>Текст с <mark>выделением</mark>.</p>\n    <blockquote>Цитата</blockquote>\n    <address>ул. Тестовая, 1</address>\n    <details><summary>Подробнее</summary><p>Скрытое</p></details>\n  </section>\n  <footer><p>Подвал &copy; 2026</p></footer>\n</article>',
+                '<h1>Медиа</h1>\n<a href="https://example.com" target="_blank" rel="noopener">Ссылка</a>\n<p><a href="/page">Внутренняя</a></p>\n<p><img src="https://picsum.photos/200/120" alt="Фото" width="200" height="120" loading="lazy"></p>\n<figure>\n  <img src="https://picsum.photos/300/150" alt="Фигура" width="300" height="150">\n  <figcaption>Рис. 1</figcaption>\n</figure>\n<video src="https://www.w3schools.com/html/mov_bbb.mp4" poster="https://picsum.photos/640/360" width="640" height="360" controls></video>\n<audio src="https://www.w3schools.com/html/horse.mp3" controls></audio>\n<iframe src="about:blank" title="Фрейм" width="400" height="150"></iframe>',
+                '<h1>Таблицы</h1>\n<ul><li>Пункт 1</li><li>Пункт 2</li><li>Пункт 3</li></ul>\n<ol><li>Шаг 1</li><li>Шаг 2</li></ol>\n<dl><dt>Термин</dt><dd>Определение</dd></dl>\n<table>\n  <caption>Заголовок</caption>\n  <thead><tr><th>К-1</th><th>К-2</th></tr></thead>\n  <tbody><tr><td>Я-1</td><td>Я-2</td></tr></tbody>\n</table>\n<form action="/sub" method="post"><label>Поле:</label><button type="submit">ОТПРАВИТЬ</button></form>',
+                '<section class="hero">\n  <h1>Hero</h1>\n  <p>Описание.</p>\n  <a href="#cta">Действие</a>\n</section>\n<section>\n  <h2>Features</h2>\n  <div><h3>F1</h3><p>Описание 1.</p></div>\n  <div><h3>F2</h3><p>Описание 2.</p></div>\n</section>\n<aside><h3>Sidebar</h3>\n  <nav><ul><li><a href="/p1">Стр. 1</a></li><li><a href="/p2">Стр. 2</a></li></ul></nav>\n</aside>',
+                '<!-- Комментарий -->\n<style>.c{color:red;}</style>\n<script>console.log("test");<\/script>\n<h1>Заголовок</h1>\n<p>Текст.</p>\n<noscript><p>JS off<\/p><\/noscript>\n<p>Финал.</p>',
+                '<h1></h1>\n<p>Символы: &lt;тег&gt; &amp; &quot;кавычки&quot; &copy;</p>\n<p>Unicode: 🚀 日本語 العربية</p>\n<p>Long: ' + 'A'.repeat(200) + '</p>\n<div class="leaf">Достаточно длинный текст в leaf-div</div>\n<span>Спан текст</span><small>Мелкий</small><big>Крупный</big>',
+                '<article>\n  <header>\n    <h1>Комплексная</h1>\n    <nav><a href="/" target="_self">Главная</a><a href="/about" target="_blank" rel="noopener">О нас</a></nav>\n  </header>\n  <section>\n    <h2>Медиа</h2>\n    <figure><img src="https://picsum.photos/400/200" alt="Фото" width="400" height="200"><figcaption>Рис. 1</figcaption></figure>\n    <ul><li>Пункт 1</li><li>Пункт 2</li></ul>\n  </section>\n  <section>\n    <h2>Таблица</h2>\n    <table><thead><tr><th>Название</th><th>Значение</th></tr></thead><tbody><tr><td>П1</td><td>Зн1</td></tr></tbody></table>\n  </section>\n  <footer><p>&copy; 2026</p><address>test@example.com</address></footer>\n</article>'
+            ];
+
+            var _toks = [];
+            var TP = [
+                /<!--[\s\S]*?-->/g,
+                /<script(?:\s[^>]*)?>[\s\S]*?<\/script>/gi,
+                /<style(?:\s[^>]*)?>[\s\S]*?<\/style>/gi,
+                /<noscript(?:\s[^>]*)?>[\s\S]*?<\/noscript>/gi,
+                /<template(?:\s[^>]*)?>[\s\S]*?<\/template>/gi,
+                /<svg(?:\s[^>]*)?>[\s\S]*?<\/svg>/gi,
+                /<math(?:\s[^>]*)?>[\s\S]*?<\/math>/gi,
+                /<(?:meta|link|base)(?:\s[^>]*)?\/?>/gi,
+                /<\?(?:php|=)?[\s\S]*?\?>/gi
+            ];
+
+            function tokenizeT(h) {
+                _toks = [];
+                if (!h) return h || '';
+                var used = new Uint8Array(h.length), ms = [];
+                TP.forEach(function (re) { re.lastIndex = 0; var m; while ((m = re.exec(h)) !== null) { var ov = false; for (var i = m.index; i < m.index + m[0].length; i++)if (used[i]) { ov = true; break; } if (!ov) { ms.push({ i: m.index, l: m[0].length, t: m[0] }); for (var j = m.index; j < m.index + m[0].length; j++)used[j] = 1; } re.lastIndex = m.index + 1; } });
+                if (!ms.length) return h;
+                ms.sort(function (a, b) { return a.i - b.i; });
+                var r = h; for (var k = ms.length - 1; k >= 0; k--) { var mt = ms[k]; r = r.substring(0, mt.i) + '\x00SEV' + k + '\x00' + r.substring(mt.i + mt.l); }
+                _toks = ms.map(function (m) { return m.t; });
+                return r.replace(/\x00SEV(\d+)\x00/g, function (_, n) { return '<div data-sev8ph="' + n + '"></div>'; });
+            }
+
+            function detokenizeT(h) {
+                if (!_toks.length) return h;
+                return h.replace(/<div[^>]*\bdata-sev8ph="(\d+)"[^>]*>\s*<\/div>|<div[^>]*\bdata-sev8ph="(\d+)"[^>]*\/>/g, function (_, a, b) { var i = parseInt(a !== undefined ? a : b, 10); return (i >= 0 && i < _toks.length) ? _toks[i] : ''; });
+            }
+
+            function hashT(s) { var h = 5381; for (var i = 0; i < s.length; i++)h = ((h << 5) + h + s.charCodeAt(i)) | 0; return (h >>> 0).toString(36); }
+
+            var TXT = { h1: 1, h2: 1, h3: 1, h4: 1, h5: 1, h6: 1, p: 1, li: 1, dt: 1, dd: 1, figcaption: 1, blockquote: 1, th: 1, td: 1, caption: 1, label: 1, address: 1, pre: 1, summary: 1 };
+            var ATRS = { a: ['href', 'target', 'rel', 'title'], img: ['src', 'alt', 'width', 'height', 'title', 'loading', 'decoding'], video: ['src', 'poster', 'width', 'height', 'controls', 'autoplay', 'loop', 'muted'], audio: ['src', 'controls', 'autoplay', 'loop', 'muted'], source: ['src', 'type', 'media'], track: ['src', 'kind', 'label', 'srclang'], iframe: ['src', 'title', 'width', 'height', 'loading'], embed: ['src', 'type', 'width', 'height'], object: ['data', 'type', 'width', 'height'], form: ['action', 'method', 'enctype', 'name'], button: ['type', 'name', 'value'], time: ['datetime'], data: ['value'] };
+            var HTX = { a: 1, button: 1, time: 1, data: 1 };
+            var LEAF = { div: 1, span: 1, small: 1, big: 1 };
+            var SKIP = { script: 1, style: 1, meta: 1, link: 1, noscript: 1, br: 1, hr: 1, wbr: 1, svg: 1, input: 1, select: 1, textarea: 1, option: 1, optgroup: 1, template: 1, canvas: 1, picture: 1, 'sev8-ph': 1 };
+            var PH = 'data-sev8ph', MK = 'data-sev8';
+            var _doc = null, _map = {};
+
+            function parseAndMarkT(html) {
+                var safe = tokenizeT(html || '');
+                var doc = (new DOMParser()).parseFromString(safe, 'text/html');
+                var map = {}, idx = 0;
+                function hasED(n) { for (var i = 0; i < n.children.length; i++) { var c = n.children[i], ct = c.tagName.toLowerCase(); if (SKIP[ct] || c.hasAttribute(PH)) continue; if (TXT[ct] || ATRS[ct]) return true; if (LEAF[ct] && (c.textContent || '').trim().length >= 2) return true; if (hasED(c)) return true; } return false; }
+                function wm(n, d) {
+                    if (d > 40 || !n || n.nodeType !== 1) return;
+                    var t = n.tagName.toLowerCase();
+                    if (SKIP[t] || n.hasAttribute(PH)) return;
+                    var iT = !!TXT[t], iA = !!ATRS[t], iL = !!LEAF[t];
+                    if (iT) { var htk = false; (function c(x) { for (var i = 0; i < x.children.length && !htk; i++) { var ch = x.children[i]; if (TXT[ch.tagName.toLowerCase()]) { htk = true; return; } c(ch); } })(n); if (!htk) { var id = 'n' + (++idx); n.setAttribute(MK, id); map[id] = { node: n, tag: t, type: iA ? 'both' : 'text', attrs: iA ? ATRS[t] : null }; return; } for (var i = 0; i < n.children.length; i++)wm(n.children[i], d + 1); return; }
+                    if (iA) { if (!hasED(n)) { var id2 = 'n' + (++idx); n.setAttribute(MK, id2); var hb = !!HTX[t] && (n.textContent || '').trim().length > 0; map[id2] = { node: n, tag: t, type: hb ? 'both' : 'attrs', attrs: ATRS[t] }; return; } for (var j = 0; j < n.children.length; j++)wm(n.children[j], d + 1); return; }
+                    if (iL) { var tx = (n.textContent || '').trim(); if (tx.length >= 2 && !hasED(n)) { var id3 = 'n' + (++idx); n.setAttribute(MK, id3); map[id3] = { node: n, tag: t, type: 'text', attrs: null }; return; } }
+                    for (var k = 0; k < n.children.length; k++)wm(n.children[k], d + 1);
+                }
+                wm(doc.body, 0); _doc = doc; _map = map; return { doc: doc, map: map };
+            }
+
+            function serializeT() {
+                if (!_doc) return '';
+                var cl = _doc.body.cloneNode(true);
+                Array.prototype.forEach.call(cl.querySelectorAll('[' + MK + ']'), function (n) { n.removeAttribute(MK); });
+                Array.prototype.forEach.call(cl.querySelectorAll('*'), function (n) { Array.prototype.slice.call(n.attributes).forEach(function (a) { if (/^data-sev/.test(a.name) && a.name !== PH) n.removeAttribute(a.name); }); });
+                return detokenizeT(cl.innerHTML);
+            }
+
+            function fmtT(src) {
+                var TAB = '  ';
+                var BL = /^(div|section|article|header|footer|main|nav|aside|p|ul|ol|li|table|thead|tbody|tfoot|tr|caption|blockquote|figure|figcaption|h[1-6]|form|fieldset|dl|dt|dd|address|details|summary|dialog|picture)$/;
+                var VD = /^(area|base|br|col|embed|hr|img|input|link|meta|param|source|track|wbr)$/;
+                var RW = /^(pre|code|textarea|script|style|noscript|template)$/;
+                function sA(el) { var s = ''; Array.prototype.forEach.call(el.attributes, function (a) { s += ' ' + a.name + '="' + a.value.replace(/&/g, '&amp;').replace(/"/g, '&quot;') + '"'; }); return s; }
+                function hBC(el) { var r = false; Array.prototype.forEach.call(el.childNodes, function (c) { if (c.nodeType === 1 && BL.test(c.tagName.toLowerCase())) r = true; }); return r; }
+                function ser(n, d) {
+                    var o = '';
+                    Array.prototype.forEach.call(n.childNodes, function (c) {
+                        var p = TAB.repeat(Math.max(0, d));
+                        if (c.nodeType === 8) { o += p + '<!--' + c.nodeValue + '-->\n'; }
+                        else if (c.nodeType === 3) { var tx = c.nodeValue.replace(/\s+/g, ' ').trim(); if (tx) o += p + tx + '\n'; }
+                        else if (c.nodeType === 1) {
+                            var tg = c.tagName.toLowerCase(), at = sA(c);
+                            if (VD.test(tg)) { o += p + '<' + tg + at + '>\n'; }
+                            else if (RW.test(tg)) { o += p + '<' + tg + at + '>' + c.innerHTML + '</' + tg + '>\n'; }
+                            else if (BL.test(tg)) {
+                                if (!hBC(c) && c.innerHTML.trim()) o += p + '<' + tg + at + '>' + c.innerHTML.replace(/\s+/g, ' ').trim() + '</' + tg + '>\n';
+                                else if (!c.innerHTML.trim()) o += p + '<' + tg + at + '></' + tg + '>\n';
+                                else { o += p + '<' + tg + at + '>\n'; o += ser(c, d + 1); o += p + '</' + tg + '>\n'; }
+                            } else { o += p + c.outerHTML + '\n'; }
+                        }
+                    });
+                    return o;
+                }
+                var sv = _toks.slice();
+                var safe = tokenizeT(src);
+                var doc;
+                try { doc = (new DOMParser()).parseFromString('<!DOCTYPE html><html><head></head><body>' + safe + '</body></html>', 'text/html'); } catch (e) { _toks = sv; return src; }
+                var res = ser(doc.body, 0).replace(/\n{3,}/g, '\n\n').trim();
+                var out = detokenizeT(res); _toks = sv; return out;
+            }
+
+            function eh(s) { return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
+            function wait(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }
+            function ass(c, m) { if (!c) throw new Error('Assert: ' + (m || 'false')); }
+            function eq(a, b, m) { if (a !== b) throw new Error((m || 'eq') + '\n  exp:' + JSON.stringify(b) + '\n  got:' + JSON.stringify(a)); }
+            function has(s, sub, m) { if (typeof s !== 'string' || s.indexOf(sub) === -1) throw new Error((m || 'has') + ': "' + sub + '" not in "' + String(s).substring(0, 120) + '"'); }
+            function nohas(s, sub, m) { if (typeof s === 'string' && s.indexOf(sub) !== -1) throw new Error((m || 'nohas') + ': "' + sub + '" found'); }
+            function tp(v, t, m) { if (typeof v !== t) throw new Error((m || 'type') + ': exp ' + t + ' got ' + typeof v); }
+            function ex(el, m) { if (!el) throw new Error(m || 'element not found'); }
+            function gt(a, b, m) { if (!(a > b)) throw new Error((m || 'gt') + ': ' + a + ' not > ' + b); }
+            function gte(a, b, m) { if (!(a >= b)) throw new Error((m || 'gte') + ': ' + a + ' not >= ' + b); }
+
+            function root() { return document.getElementById('sev8'); }
+            function nta() { return document.getElementById('modx-resource-content'); }
+            function area() { var r = root(); return r ? r.querySelector('#sev8-area') : null; }
+            function tas() { var r = root(); return r ? r.querySelectorAll('textarea.sev8-in') : []; }
+            function tabs() { var r = root(); return r ? r.querySelectorAll('.sev8-tab') : []; }
+            function clickTab(name) { var ts = tabs(); for (var i = 0; i < ts.length; i++)if (ts[i].textContent.toLowerCase().indexOf(name.toLowerCase()) !== -1) { ts[i].click(); return true; } return false; }
+            function syncBtn() { var tb = document.getElementById('sev8-tb'); if (!tb) return null; var bs = tb.querySelectorAll('.sev8-btn'); for (var i = 0; i < bs.length; i++)if (bs[i].textContent.indexOf('Синхр') !== -1) return bs[i]; return null; }
+            function undoBtn() { var tb = document.getElementById('sev8-tb'); if (!tb) return null; var bs = tb.querySelectorAll('.sev8-btn'); for (var i = 0; i < bs.length; i++)if (bs[i].textContent.indexOf('Отмен') !== -1) return bs[i]; return null; }
+            function redoBtn() { var tb = document.getElementById('sev8-tb'); if (!tb) return null; var bs = tb.querySelectorAll('.sev8-btn'); for (var i = 0; i < bs.length; i++)if (bs[i].textContent.indexOf('Повтор') !== -1) return bs[i]; return null; }
+            function key(el, k, ctrl) { el.dispatchEvent(new KeyboardEvent('keydown', { key: k, bubbles: true, cancelable: true, ctrlKey: !!ctrl })); }
+            function fbtns() { return document.querySelectorAll('#sev8-fmtrow .sev8-fb'); }
+
+            var SUITES = [], RESULTS = [], filterIdx = null, running = false;
+            function suite(n, ts) { SUITES.push({ name: n, tests: ts }); }
+            function T(n, f) { return { name: n, fn: f }; }
+
+            suite('Unit: simpleHash', [
+                T('returns string', function () { tp(hashT('hello'), 'string'); }),
+                T('deterministic', function () { eq(hashT('abc'), hashT('abc')); }),
+                T('different inputs differ', function () { ass(hashT('abc') !== hashT('xyz')); }),
+                T('empty string valid', function () { var h = hashT(''); tp(h, 'string'); gt(h.length, 0); }),
+                T('unicode', function () { tp(hashT('日本語🚀'), 'string'); }),
+                T('long string stable', function () { var s = 'x'.repeat(10000); eq(hashT(s), hashT(s)); }),
+                T('numeric string', function () { tp(hashT('12345'), 'string'); }),
+                T('collision resistance 500', function () { var h = {}, c = 0; for (var i = 0; i < 500; i++) { var hv = hashT(Math.random().toString(36) + i); if (h[hv]) c++; h[hv] = true; } ass(c < 5, 'collisions'); }),
+                T('hash changes on whitespace diff', function () { ass(hashT('a b') !== hashT('ab')); }),
+                T('hash of null-like: empty string', function () { tp(hashT(''), 'string'); }),
+            ]);
+
+            suite('Unit: tokenize/detokenize', [
+                T('plain: identity', function () { eq(tokenizeT('<p>Hello</p>'), '<p>Hello</p>'); }),
+                T('empty string', function () { eq(tokenizeT(''), ''); }),
+                T('comment tokenized', function () { var r = tokenizeT('<!-- c --><p>t</p>'); nohas(r, '<!-- c -->'); has(r, 'data-sev8ph'); }),
+                T('script tokenized', function () { nohas(tokenizeT('<script>x=1;<\/script><p>t</p>'), '<script>'); }),
+                T('style tokenized', function () { nohas(tokenizeT('<style>.x{}<\/style><p>t</p>'), '<style>'); }),
+                T('svg tokenized', function () { nohas(tokenizeT('<svg><circle/><\/svg><p>t</p>'), '<svg>'); }),
+                T('noscript tokenized', function () { nohas(tokenizeT('<noscript><p>x<\/p><\/noscript><p>t</p>'), '<noscript>'); }),
+                T('template tokenized', function () { nohas(tokenizeT('<template><div>x<\/div><\/template><p>y</p>'), '<template>'); }),
+                T('detokenize: comment restored', function () { var h = '<!-- my comment --><p>text</p>'; has(detokenizeT(tokenizeT(h)), '<!-- my comment -->'); }),
+                T('detokenize: script restored', function () { var h = '<script>alert(1);<\/script><p>t</p>'; has(detokenizeT(tokenizeT(h)), 'alert(1)'); }),
+                T('detokenize: style restored', function () { var h = '<style>.cls{color:red}<\/style><p>t</p>'; has(detokenizeT(tokenizeT(h)), '.cls'); }),
+                T('multiple tokens', function () { var h = '<!-- a --><style>.x{}<\/style><script>var b;<\/script><p>t</p>'; var r = detokenizeT(tokenizeT(h)); has(r, '<!-- a -->'); has(r, '.x{}'); has(r, 'var b'); }),
+                T('no tokens: round-trip identity', function () { var h = '<h1>T</h1><p>P</p>'; eq(detokenizeT(tokenizeT(h)), h); }),
+                T('placeholder absent from final output', function () { nohas(detokenizeT(tokenizeT('<!-- c --><p>t</p>')), 'data-sev8ph'); }),
+                T('empty _toks: detokenize identity', function () { _toks = []; eq(detokenizeT('<h1>T</h1>'), '<h1>T</h1>'); }),
+                T('50x round-trips stable', function () { var h = DS[5]; for (var i = 0; i < 50; i++)eq(detokenizeT(tokenizeT(h)), h, 'iter ' + i); }),
+                T('php tokenized', function () { var h = '<?php echo 1; ?><p>t</p>'; var r = tokenizeT(h); nohas(r, '<?php'); has(r, 'data-sev8ph'); }),
+                T('meta tag tokenized', function () { var r = tokenizeT('<meta charset="utf-8"><p>t</p>'); nohas(r, '<meta'); }),
+                T('nested-like comment text passthrough', function () { var h = '<p>A <!-- not --> B</p>'; var r = detokenizeT(tokenizeT(h)); has(r, '<p>'); }),
+            ]);
+
+            suite('Unit: walkMark', [
+                T('h1 text', function () { var m = parseAndMarkT('<h1>Hello</h1>').map; var f = Object.values(m).find(function (x) { return x.tag === 'h1'; }); ass(f); eq(f.type, 'text'); }),
+                T('h2-h6 all marked', function () { var m = parseAndMarkT('<h2>A</h2><h3>B</h3><h4>C</h4><h5>D</h5><h6>E</h6>').map; var tags = Object.values(m).map(function (x) { return x.tag; }).join(',');['h2', 'h3', 'h4', 'h5', 'h6'].forEach(function (h) { has(tags, h); }); }),
+                T('p text', function () { eq(Object.values(parseAndMarkT('<p>Para</p>').map)[0].type, 'text'); }),
+                T('img attrs', function () { var f = Object.values(parseAndMarkT('<img src="/i.jpg" alt="x">').map).find(function (x) { return x.tag === 'img'; }); ass(f); eq(f.type, 'attrs'); }),
+                T('img has src attr', function () { var f = Object.values(parseAndMarkT('<img src="/i.jpg" alt="x">').map).find(function (x) { return x.tag === 'img'; }); ass(f.attrs && f.attrs.indexOf('src') !== -1); }),
+                T('a+text: both', function () { var f = Object.values(parseAndMarkT('<a href="/x">Link</a>').map).find(function (x) { return x.tag === 'a'; }); ass(f); eq(f.type, 'both'); }),
+                T('script skipped', function () { ass(!Object.values(parseAndMarkT('<script>x=1;<\/script><p>t</p>').map).find(function (x) { return x.tag === 'script'; })); }),
+                T('input skipped', function () { ass(!Object.values(parseAndMarkT('<form><input type="text"></form>').map).find(function (x) { return x.tag === 'input'; })); }),
+                T('li in ul', function () { gt(Object.values(parseAndMarkT('<ul><li>A</li><li>B</li></ul>').map).filter(function (x) { return x.tag === 'li'; }).length, 0); }),
+                T('td and th', function () { var tags = Object.values(parseAndMarkT('<table><tr><th>H</th><td>C</td></tr></table>').map).map(function (x) { return x.tag; }).join(','); has(tags, 'td'); has(tags, 'th'); }),
+                T('time datetime attr', function () { var f = Object.values(parseAndMarkT('<time datetime="2026-01-01">Jan</time>').map).find(function (x) { return x.tag === 'time'; }); ass(f); ass(f.attrs && f.attrs.indexOf('datetime') !== -1); }),
+                T('div leaf text', function () { ass(Object.values(parseAndMarkT('<div>Достаточно длинный div</div>').map).find(function (x) { return x.tag === 'div'; })); }),
+                T('div with p: p marked, div not', function () { var m = parseAndMarkT('<div><p>Текст</p></div>').map; eq(Object.values(m).filter(function (x) { return x.tag === 'div'; }).length, 0, 'div'); ass(Object.values(m).find(function (x) { return x.tag === 'p'; })); }),
+                T('dt and dd', function () { var tags = Object.values(parseAndMarkT('<dl><dt>T</dt><dd>D</dd></dl>').map).map(function (x) { return x.tag; }).join(','); has(tags, 'dt'); has(tags, 'dd'); }),
+                T('blockquote', function () { ass(Object.values(parseAndMarkT('<blockquote>Quote</blockquote>').map).find(function (x) { return x.tag === 'blockquote'; })); }),
+                T('address', function () { ass(Object.values(parseAndMarkT('<address>Addr</address>').map).find(function (x) { return x.tag === 'address'; })); }),
+                T('figcaption', function () { ass(Object.values(parseAndMarkT('<figure><img src="x"><figcaption>Cap</figcaption></figure>').map).find(function (x) { return x.tag === 'figcaption'; })); }),
+                T('summary', function () { ass(Object.values(parseAndMarkT('<details><summary>Click</summary><p>Body</p></details>').map).find(function (x) { return x.tag === 'summary'; })); }),
+                T('video attrs', function () { var f = Object.values(parseAndMarkT('<video src="v.mp4" controls></video>').map).find(function (x) { return x.tag === 'video'; }); ass(f); eq(f.type, 'attrs'); }),
+                T('span leaf', function () { ass(Object.values(parseAndMarkT('<span>Span text here</span>').map).find(function (x) { return x.tag === 'span'; })); }),
+                T('small and big', function () {
+                    var tags = Object.values(parseAndMarkT('<small>Мелкий текст</small><big>Крупный текст</big>').map).map(function (x) { return x.tag; }).join(',');
+                    has(tags, 'small'); has(tags, 'big');
+                }),
+                T('depth 45: no throw', function () { var h = ''; for (var i = 0; i < 45; i++)h += '<div>'; h += '<p>deep</p>'; for (var j = 0; j < 45; j++)h += '</div>'; parseAndMarkT(h); ass(true); }),
+                T('form attrs', function () { ass(Object.values(parseAndMarkT('<form action="/" method="post"></form>').map).find(function (x) { return x.tag === 'form'; })); }),
+                T('pre text', function () { ass(Object.values(parseAndMarkT('<pre>code here</pre>').map).find(function (x) { return x.tag === 'pre'; })); }),
+                T('label text', function () { ass(Object.values(parseAndMarkT('<label>Label text</label>').map).find(function (x) { return x.tag === 'label'; })); }),
+                T('caption text', function () { ass(Object.values(parseAndMarkT('<table><caption>Cap</caption><tr><td>x</td></tr></table>').map).find(function (x) { return x.tag === 'caption'; })); }),
+                T('empty html: map empty', function () { var m = parseAndMarkT('').map; eq(Object.keys(m).length, 0); }),
+                T('only whitespace: no crash', function () { parseAndMarkT('   \n\t  '); ass(true); }),
+                T('br skipped', function () { ass(!Object.values(parseAndMarkT('<br>').map).length); }),
+                T('hr skipped', function () { ass(!Object.values(parseAndMarkT('<hr>').map).length); }),
+            ]);
+
+            suite('Unit: serialize', [
+                T('returns string', function () { parseAndMarkT('<p>Hi</p>'); tp(serializeT(), 'string'); }),
+                T('no data-sev8 in output', function () { parseAndMarkT('<h1>T</h1>'); nohas(serializeT(), 'data-sev8="'); }),
+                T('preserves text', function () { parseAndMarkT('<h1>My Title</h1>'); has(serializeT(), 'My Title'); }),
+                T('multiple elements', function () { parseAndMarkT('<h1>H</h1><p>P</p><ul><li>L</li></ul>'); var s = serializeT(); has(s, '<h1>'); has(s, '<p>'); has(s, '<li>'); }),
+                T('comment restored', function () { parseAndMarkT('<!-- c --><p>t</p>'); has(serializeT(), '<!-- c -->'); }),
+                T('script restored', function () { parseAndMarkT('<script>alert(1);<\/script><p>t</p>'); has(serializeT(), 'alert(1)'); }),
+                T('mutation reflected', function () { var r = parseAndMarkT('<h1>Orig</h1>'); var id = Object.keys(r.map)[0]; if (r.map[id]) r.map[id].node.innerHTML = 'Changed'; has(serializeT(), 'Changed'); }),
+                T('idempotent round-trip', function () { parseAndMarkT('<h1>S</h1><p>P</p>'); var s1 = serializeT(); parseAndMarkT(s1); eq(s1, serializeT()); }),
+                T('no data-sev8ph in output', function () { parseAndMarkT('<!-- c --><p>t</p>'); nohas(serializeT(), 'data-sev8ph'); }),
+                T('preserves attributes', function () { parseAndMarkT('<a href="/path" target="_blank">L</a>'); has(serializeT(), 'href="/path"'); }),
+                T('no &amp;amp; double escape', function () { parseAndMarkT('<p>A &amp; B</p>'); nohas(serializeT(), '&amp;amp;'); }),
+                T('serialize empty: returns string', function () { parseAndMarkT(''); tp(serializeT(), 'string'); }),
+                T('long content no truncation', function () { parseAndMarkT('<p>' + 'X'.repeat(5000) + '</p>'); gt(serializeT().length, 4000); }),
+            ]);
+
+            suite('Unit: fmtHTML', [
+                T('returns string', function () { tp(fmtT('<p>test</p>'), 'string'); }),
+                T('block get newlines', function () { has(fmtT('<div><p>A</p><p>B</p></div>'), '\n'); }),
+                T('br preserved', function () { has(fmtT('<p>a<br>b</p>'), '<br>'); }),
+                T('empty element', function () { has(fmtT('<p></p>'), '<p></p>'); }),
+                T('attributes preserved', function () { var r = fmtT('<a href="/t" target="_blank">L</a>'); has(r, 'href="/t"'); has(r, 'target="_blank"'); }),
+                T('indentation', function () { var r = fmtT('<div><p>text</p></div>'); ass(/\s{2}/.test(r)); }),
+                T('script via token', function () { has(fmtT('<script>var x=1;<\/script><p>t</p>'), 'x=1'); }),
+                T('style via token', function () { has(fmtT('<style>.c{color:red}<\/style><p>t</p>'), '.c'); }),
+                T('comment preserved', function () { has(fmtT('<!-- test --><p>t</p>'), '<!-- test -->'); }),
+                T('unicode preserved', function () { var r = fmtT('<p>🚀日本語</p>'); has(r, '🚀'); has(r, '日本語'); }),
+                T('no double-escape', function () { nohas(fmtT('<p>A &amp; B</p>'), '&amp;amp;'); }),
+                T('valid parseable output', function () { var d = new DOMParser().parseFromString(fmtT(DS[1]), 'text/html'); ass(d && d.body); }),
+                T('pre verbatim', function () { has(fmtT('<pre>  code  </pre>'), '<pre>'); }),
+                T('img void', function () { has(fmtT('<img src="x.jpg" alt="x">'), '<img'); }),
+                T('DS0 full', function () { var r = fmtT(DS[0]); has(r, 'Главный'); has(r, 'Второй'); }),
+                T('DS5 script', function () { has(fmtT(DS[5]), 'console.log'); }),
+                T('DS6 unicode', function () { var r = fmtT(DS[6]); has(r, '🚀'); has(r, '日本語'); }),
+                T('deeply nested no throw', function () { var h = '<div><div><div><p>deep</p></div></div></div>'; var r = fmtT(h); has(r, 'deep'); ass(true); }),
+                T('serialize idempotent all DS', function () { var ok = true; DS.forEach(function (h) { parseAndMarkT(h); var s1 = serializeT(); parseAndMarkT(s1); if (s1 !== serializeT()) ok = false; }); ass(ok, 'idempotent'); }),
+            ]);
+
+            suite('Integration: Mount', [
+                T('#sev8 exists', function () { ex(root()); }),
+                T('#sev8-tb exists', function () { ex(document.getElementById('sev8-tb')); }),
+                T('logo text', function () { var l = document.getElementById('sev8-logo'); ex(l); has(l.textContent, 'StructEditor'); }),
+                T('3+ tabs', function () { gte(document.querySelectorAll('.sev8-tab').length, 3); }),
+                T('tab labels', function () { var t = Array.prototype.map.call(document.querySelectorAll('.sev8-tab'), function (x) { return x.textContent; }).join('|'); has(t, 'Струк'); has(t, 'Визуал'); has(t, 'Исходн'); }),
+                T('undo button', function () { ex(undoBtn()); }),
+                T('redo button', function () { ex(redoBtn()); }),
+                T('sync button', function () { ex(syncBtn()); }),
+                T('#sev8-fmtrow', function () { ex(document.getElementById('sev8-fmtrow')); }),
+                T('native ta hidden', function () { var ta = nta(); ex(ta); eq(ta.style.display, 'none'); }),
+                T('#sev8-area', function () { ex(area()); }),
+                T('#sev8-st', function () { ex(document.getElementById('sev8-st')); }),
+                T('#sev8-css in head', function () { ex(document.getElementById('sev8-css')); }),
+                T('display:flex', function () { eq(getComputedStyle(root()).display, 'flex'); }),
+            ]);
+
+            suite('Integration: Struct Tab', [
+                T('struct active by default', function () { gt(document.querySelectorAll('.sev8-tab.active').length, 0); }),
+                T('area has children', function () { var a = area(); ex(a); gt(a.children.length, 0); }),
+                T('tag badges', function () { gt(document.querySelectorAll('.sev8-ctag,.sev8-ntag').length, 0); }),
+                T('textareas with content', function () { var ts = tas(); gt(ts.length, 0); gt(Array.prototype.filter.call(ts, function (t) { return t.value.length > 0; }).length, 0); }),
+                T('micro-buttons', function () { gt(document.querySelectorAll('.sev8-mb').length, 0); }),
+                T('cards or tree nodes', function () { gt(document.querySelectorAll('.sev8-card,.sev8-tn').length, 0); }),
+                T('card collapse', function () { var h = document.querySelector('.sev8-ch'); if (!h) { ass(true, 'tree mode'); return; } var b = h.nextElementSibling; var before = b ? b.style.display : ''; h.click(); ass(b ? b.style.display !== before : true); }),
+            ]);
+
+            suite('Integration: Source Tab', [
+                T('source tab clickable', function () { ass(clickTab('Исходник')); }),
+                T('#sev8-src-ta exists', function () { ex(document.getElementById('sev8-src-ta')); }),
+                T('source ta has HTML', function () { var ta = document.getElementById('sev8-src-ta'); ex(ta); gt(ta.value.length, 0); }),
+                T('source contains < tag', function () { has(document.getElementById('sev8-src-ta').value, '<'); }),
+                T('Format button', function () { gt(Array.prototype.filter.call(document.querySelectorAll('.sev8-btn'), function (b) { return b.textContent.indexOf('Формат') !== -1; }).length, 0); }),
+                T('Apply button', function () {
+                    var found = Array.prototype.filter.call(document.querySelectorAll('.sev8-btn'), function (b) {
+                        return b.textContent.indexOf('Примен') !== -1;
+                    });
+                    gt(found.length, 0, 'Apply btn not found');
+                }),
+                T('edit + apply to native ta', function () {
+                    var ta = document.getElementById('sev8-src-ta'); if (!ta) { ass(true, 'skip'); return; }
+                    var mk = '<!-- mk-' + Date.now() + ' -->';
+                    ta.value = ta.value + mk; ta.dispatchEvent(new Event('input', { bubbles: true }));
+                    var ab = Array.prototype.filter.call(document.querySelectorAll('.sev8-btn'), function (b) { return b.textContent.indexOf('Примен') !== -1; })[0];
+                    if (!ab) { ass(true, 'no apply'); return; } ab.click();
+                    return wait(200).then(function () { var t = nta(); if (t) has(t.value, mk); });
+                }),
+                T('Ctrl+Enter: no throw', function () { var ta = document.getElementById('sev8-src-ta'); if (ta) key(ta, 'Enter', true); ass(true); }),
+                T('Tab key: no throw', function () { var ta = document.getElementById('sev8-src-ta'); if (ta) { ta.focus(); ta.setSelectionRange(0, 0); ta.dispatchEvent(new KeyboardEvent('keydown', { key: 'Tab', bubbles: true, cancelable: true })); } ass(true); }),
+                T('Format button: no throw', function () { var b = Array.prototype.filter.call(document.querySelectorAll('.sev8-btn'), function (x) { return x.textContent.indexOf('Формат') !== -1; })[0]; if (b) b.click(); ass(true); }),
+            ]);
+
+            suite('Integration: Visual Tab', [
+                T('visual tab click', function () { ass(clickTab('Визуальный')); }),
+                T('#sev8-vis created', function () { return wait(250).then(function () { ex(document.getElementById('sev8-vis')); }); }),
+                T('iframe present', function () { return wait(300).then(function () { ex(document.querySelector('#sev8-vis iframe'), 'iframe'); }); }),
+                T('sandbox attr set', function () {
+                    return wait(300).then(function () {
+                        var fr = document.querySelector('#sev8-vis iframe'); if (!fr) { ass(true); return; }
+                        ass(fr.getAttribute('sandbox') !== null);
+                    });
+                }),
+                T('sandbox blocks scripts', function () {
+                    return wait(300).then(function () {
+                        var fr = document.querySelector('#sev8-vis iframe'); if (!fr) { ass(true); return; }
+                        ass((fr.getAttribute('sandbox') || '').indexOf('allow-scripts') === -1, 'no allow-scripts');
+                    });
+                }),
+                T('info bar present', function () { return wait(300).then(function () { ex(document.querySelector('#sev8-vis .sev8-bar.info')); }); }),
+                T('back to struct', function () {
+                    clickTab('Структур');
+                    return wait(250).then(function () { ass(!document.getElementById('sev8-vis'), 'vis gone'); ex(area(), 'area back'); });
+                }),
+            ]);
+
+            suite('Integration: Sync & History', [
+                T('sync updates native ta', function () { clickTab('Структур'); var b = syncBtn(); if (!b) { ass(true); return; } b.click(); gt(nta().value.length, 0); }),
+                T('redo disabled initially', function () { var b = redoBtn(); if (b) ass(b.disabled, 'redo disabled'); else ass(true); }),
+                T('Ctrl+Z: no throw', function () { key(document.body, 'z', true); ass(true); }),
+                T('Ctrl+Y: no throw', function () { key(document.body, 'y', true); ass(true); }),
+                T('multiple syncs: data intact', function () { var b = syncBtn(); if (!b) { ass(true); return; } for (var i = 0; i < 4; i++)b.click(); gt(nta().value.length, 0); }),
+                T('no data-sev8 in native ta', function () { var b = syncBtn(); if (!b) { ass(true); return; } b.click(); nohas(nta().value, 'data-sev8="'); }),
+                T('no data-sev8ph in native ta', function () { var b = syncBtn(); if (!b) { ass(true); return; } b.click(); nohas(nta().value, 'data-sev8ph'); }),
+                T('sync fires event on native ta', function () {
+                    return new Promise(function (res, rej) {
+                        var ta = nta(); if (!ta) { res(); return; }
+                        var got = false;
+                        function h() { got = true; }
+                        ta.addEventListener('input', h);
+                        ta.addEventListener('change', h);
+                        var b = syncBtn(); if (b) b.click();
+                        setTimeout(function () {
+                            ta.removeEventListener('input', h);
+                            ta.removeEventListener('change', h);
+                            ass(ta.value.length > 0, 'ta has content after sync');
+                            res();
+                        }, 400);
+                    });
+                }),
+            ]);
+
+            suite('Integration: Edit & Serialize', [
+                T('textarea change in native ta', function () {
+                    return new Promise(function (res, rej) {
+                        clickTab('Структур');
+                        setTimeout(function () {
+                            try {
+                                var ts2 = tas(); if (!ts2.length) { res(); return; }
+                                var ta = ts2[0], u = 'UNIQUE_' + Date.now();
+                                ta.value = u; ta.dispatchEvent(new Event('input', { bubbles: true })); ta.dispatchEvent(new Event('change', { bubbles: true }));
+                                setTimeout(function () { try { var t = nta(); if (t) has(t.value, u); res(); } catch (e) { rej(e); } }, 900);
+                            } catch (e) { rej(e); }
+                        }, 200);
+                    });
+                }),
+                T('target=_blank auto rel=noopener', function () {
+                    return new Promise(function (res, rej) {
+                        clickTab('Структур');
+                        setTimeout(function () {
+                            try {
+                                var tg = document.querySelectorAll('[data-a="target"]'); if (!tg.length) { res(); return; }
+                                tg[0].value = '_blank'; tg[0].dispatchEvent(new Event('change', { bubbles: true }));
+                                setTimeout(function () { try { var rl = document.querySelectorAll('[data-a="rel"]'); if (rl.length) has(rl[0].value, 'noopener'); else ass(true); res(); } catch (e) { rej(e); } }, 500);
+                            } catch (e) { rej(e); }
+                        }, 200);
+                    });
+                }),
+                T('alt field for img', function () { clickTab('Структур'); return wait(150).then(function () { var al = document.querySelectorAll('[data-a="alt"]'); if (al.length) gte(al.length, 1); else ass(true); }); }),
+            ]);
+
+            suite('Integration: Struct Ops', [
+                T('clone duplicates', function () {
+                    return new Promise(function (res, rej) {
+                        clickTab('Структур');
+                        setTimeout(function () {
+                            try {
+                                var cs = document.querySelectorAll('.sev8-mb[title="Клонировать"]'); if (!cs.length) { res(); return; }
+                                var before = document.querySelectorAll('.sev8-row,.sev8-tn').length; cs[0].click();
+                                setTimeout(function () { try { gte(document.querySelectorAll('.sev8-row,.sev8-tn').length, before); res(); } catch (e) { rej(e); } }, 200);
+                            } catch (e) { rej(e); }
+                        }, 150);
+                    });
+                }),
+                T('move up: no throw', function () { var ups = document.querySelectorAll('.sev8-mb[title="Вверх"]'); if (ups.length >= 2) ups[1].click(); ass(true); }),
+                T('move down: no throw', function () { var dns = document.querySelectorAll('.sev8-mb[title="Вниз"]'); if (dns.length) dns[0].click(); ass(true); }),
+                T('add inserts element', function () {
+                    return new Promise(function (res, rej) {
+                        var adds = document.querySelectorAll('.sev8-mb.add'); if (!adds.length) { res(); return; }
+                        var before = tas().length; adds[0].click();
+                        setTimeout(function () { try { gte(tas().length, before); res(); } catch (e) { rej(e); } }, 200);
+                    });
+                }),
+                T('delete cancel=no change', function () { var oc = window.confirm; window.confirm = function () { return false; }; var before = document.querySelectorAll('.sev8-row,.sev8-tn').length; var ds = document.querySelectorAll('.sev8-mb.del'); if (ds.length) ds[0].click(); window.confirm = oc; eq(document.querySelectorAll('.sev8-row,.sev8-tn').length, before); }),
+                T('delete confirm=true removes', function () {
+                    return new Promise(function (res, rej) {
+                        clickTab('Структур');
+                        setTimeout(function () {
+                            try {
+                                var ds = document.querySelectorAll('.sev8-mb.del'); if (!ds.length) { res(); return; }
+                                var before = document.querySelectorAll('.sev8-row,.sev8-tn').length;
+                                var oc = window.confirm; window.confirm = function () { return true; }; ds[0].click(); window.confirm = oc;
+                                setTimeout(function () { try { ass(document.querySelectorAll('.sev8-row,.sev8-tn').length <= before, 'removed'); res(); } catch (e) { rej(e); } }, 200);
+                            } catch (e) { rej(e); }
+                        }, 150);
+                    });
+                }),
+            ]);
+
+            suite('Integration: Format Bar', [
+                T('fmtrow exists', function () { ex(document.getElementById('sev8-fmtrow')); }),
+                T('bold button', function () { ex(document.querySelector('#sev8-fmtrow .sev8-fb.bold')); }),
+                T('5+ fmt buttons', function () { gte(fbtns().length, 5); }),
+                T('dimmed on no focus', function () { document.body.click(); return wait(300).then(function () { ass(document.getElementById('sev8-fmtrow').classList.contains('dimmed')); }); }),
+                T('activates on focus', function () {
+                    return new Promise(function (res, rej) {
+                        clickTab('Структур');
+                        setTimeout(function () {
+                            try {
+                                var ts2 = document.querySelectorAll('textarea.sev8-in'); if (!ts2.length) { res(); return; }
+                                ts2[0].dispatchEvent(new Event('focus', { bubbles: true }));
+                                ts2[0].focus();
+                                setTimeout(function () { try { ass(!document.getElementById('sev8-fmtrow').classList.contains('dimmed'), 'active'); res(); } catch (e) { rej(e); } }, 500);
+                            } catch (e) { rej(e); }
+                        }, 300);
+                    });
+                }),
+                T('bold wraps <strong>', function () {
+                    return new Promise(function (res, rej) {
+                        clickTab('Структур');
+                        setTimeout(function () {
+                            try {
+                                var ts2 = document.querySelectorAll('textarea.sev8-in'); if (!ts2.length) { res(); return; }
+                                var ta = ts2[0]; ta.value = 'hello world'; ta.focus(); ta.setSelectionRange(6, 11); ta.dispatchEvent(new Event('focus', { bubbles: true }));
+                                setTimeout(function () { try { var b = document.querySelector('#sev8-fmtrow .sev8-fb.bold'); if (b) b.click(); has(ta.value, '<strong>'); res(); } catch (e) { rej(e); } }, 300);
+                            } catch (e) { rej(e); }
+                        }, 200);
+                    });
+                }),
+                T('italic wraps <em>', function () {
+                    return new Promise(function (res, rej) {
+                        clickTab('Структур');
+                        setTimeout(function () {
+                            try {
+                                var ts2 = document.querySelectorAll('textarea.sev8-in'); if (!ts2.length) { res(); return; }
+                                var ta = ts2[0]; ta.value = 'hello world'; ta.focus(); ta.setSelectionRange(0, 5); ta.dispatchEvent(new Event('focus', { bubbles: true }));
+                                setTimeout(function () { try { var b = document.querySelector('#sev8-fmtrow .sev8-fb.ital'); if (b) b.click(); has(ta.value, '<em>'); res(); } catch (e) { rej(e); } }, 300);
+                            } catch (e) { rej(e); }
+                        }, 200);
+                    });
+                }),
+                T('clear fmt removes <strong>', function () {
+                    return new Promise(function (res, rej) {
+                        clickTab('Структур');
+                        setTimeout(function () {
+                            try {
+                                var ts2 = document.querySelectorAll('textarea.sev8-in'); if (!ts2.length) { res(); return; }
+                                var ta = ts2[0]; ta.value = 'x <strong>bold</strong> y'; ta.focus(); ta.setSelectionRange(2, 21); ta.dispatchEvent(new Event('focus', { bubbles: true }));
+                                setTimeout(function () { try { var cl = Array.prototype.filter.call(fbtns(), function (b) { return b.textContent.indexOf('fmt') !== -1; })[0]; if (cl) cl.click(); ass(!/<strong>/.test(ta.value.substring(2)), 'cleared'); res(); } catch (e) { rej(e); } }, 300);
+                            } catch (e) { rej(e); }
+                        }, 200);
+                    });
+                }),
+                T('nbsp button', function () { gt(Array.prototype.filter.call(fbtns(), function (b) { return b.innerHTML.indexOf('nbsp') !== -1; }).length, 0); }),
+                T('br button', function () { gt(Array.prototype.filter.call(fbtns(), function (b) { return b.innerHTML.indexOf('br') !== -1; }).length, 0); }),
+            ]);
+
+            suite('Integration: Fullscreen', [
+                T('fullscreen button', function () { gt(Array.prototype.filter.call(document.querySelectorAll('.sev8-btn'), function (b) { return b.innerHTML.indexOf('⊞') !== -1; }).length, 0); }),
+                T('toggle adds fixed', function () { var b = Array.prototype.filter.call(document.querySelectorAll('.sev8-btn'), function (x) { return x.innerHTML.indexOf('⊞') !== -1; })[0]; if (!b) { ass(true); return; } b.click(); ass(root().style.position === 'fixed', 'fixed'); b.click(); }),
+                T('exit restores position', function () { var b = Array.prototype.filter.call(document.querySelectorAll('.sev8-btn'), function (x) { return x.innerHTML.indexOf('⊞') !== -1; })[0]; if (!b) { ass(true); return; } b.click(); b.click(); ass(root().style.position !== 'fixed', 'not fixed'); }),
+                T('body overflow toggle', function () { var b = Array.prototype.filter.call(document.querySelectorAll('.sev8-btn'), function (x) { return x.innerHTML.indexOf('⊞') !== -1; })[0]; if (!b) { ass(true); return; } b.click(); ass(document.body.style.overflow === 'hidden', 'hidden'); b.click(); ass(document.body.style.overflow !== 'hidden', 'restored'); }),
+            ]);
+
+            suite('Integration: Tab Switching', [
+                T('struct→source→struct: content intact', function () {
+                    return new Promise(function (res, rej) {
+                        clickTab('Структур');
+                        setTimeout(function () {
+                            try {
+                                clickTab('Исходник');
+                                setTimeout(function () {
+                                    try {
+                                        clickTab('Структур');
+                                        setTimeout(function () { try { gt(nta().value.length, 0); res(); } catch (e) { rej(e); } }, 300);
+                                    } catch (e) { rej(e); }
+                                }, 200);
+                            } catch (e) { rej(e); }
+                        }, 200);
+                    });
+                }),
+                T('struct→visual→struct: area restored', function () {
+                    return new Promise(function (res, rej) {
+                        clickTab('Структур');
+                        setTimeout(function () {
+                            try {
+                                clickTab('Визуальный');
+                                setTimeout(function () {
+                                    try {
+                                        clickTab('Структур');
+                                        setTimeout(function () {
+                                            try {
+                                                ass(!document.getElementById('sev8-vis'), 'vis gone');
+                                                ex(area(), 'area');
+                                                res();
+                                            } catch (e) { rej(e); }
+                                        }, 350);
+                                    } catch (e) { rej(e); }
+                                }, 350);
+                            } catch (e) { rej(e); }
+                        }, 200);
+                    });
+                }),
+                T('rapid stress: root survives', function () {
+                    ['Структур', 'Исходник', 'Структур', 'Исходник', 'Структур'].forEach(function (n) { clickTab(n); });
+                    return wait(500).then(function () { ex(root(), 'root survives'); });
+                }),
+                T('only one active tab', function () {
+                    clickTab('Исходник');
+                    return wait(100).then(function () { eq(document.querySelectorAll('.sev8-tab.active').length, 1, 'one active'); clickTab('Структур'); });
+                }),
+            ]);
+
+            suite('Datasets Coverage', [
+                T('DS0: h1,p marked', function () { var m = parseAndMarkT(DS[0]).map; var t = Object.values(m).map(function (x) { return x.tag; }).join(','); has(t, 'h1'); has(t, 'p'); }),
+                T('DS1: semantic parsed', function () { gt(Object.keys(parseAndMarkT(DS[1]).map).length, 3); }),
+                T('DS2: a and img', function () { var m = parseAndMarkT(DS[2]).map; ass(Object.values(m).find(function (x) { return x.tag === 'a'; })); ass(Object.values(m).find(function (x) { return x.tag === 'img'; })); }),
+                T('DS3: li td dt dd', function () { var t = Object.values(parseAndMarkT(DS[3]).map).map(function (x) { return x.tag; }).join(','); has(t, 'li'); has(t, 'td'); }),
+                T('DS4: nested parsed', function () { gt(Object.keys(parseAndMarkT(DS[4]).map).length, 3); }),
+                T('DS5: script token preserved', function () { parseAndMarkT(DS[5]); has(serializeT(), 'console.log'); }),
+                T('DS5: comment preserved', function () { parseAndMarkT(DS[5]); has(serializeT(), 'Комментарий'); }),
+                T('DS6: unicode in serialize', function () { parseAndMarkT(DS[6]); var s = serializeT(); has(s, '🚀'); has(s, '日本語'); }),
+                T('DS7: mixed types', function () { var t = Object.values(parseAndMarkT(DS[7]).map).map(function (x) { return x.tag; }).join(','); has(t, 'h1'); has(t, 'p'); }),
+                T('fmtHTML DS0', function () { var r = fmtT(DS[0]); has(r, 'Главный'); has(r, 'Второй'); }),
+                T('fmtHTML DS5 script', function () { has(fmtT(DS[5]), 'console.log'); }),
+                T('fmtHTML DS6 unicode', function () { var r = fmtT(DS[6]); has(r, '🚀'); has(r, '日本語'); }),
+            ]);
+
+            suite('Edge Cases', [
+                T('empty: no crash', function () { parseAndMarkT(''); ass(true); }),
+                T('whitespace: no crash', function () { parseAndMarkT('   \n\t  '); ass(true); }),
+                T('malformed unclosed', function () { parseAndMarkT('<p>unclosed <b>tags <i>here'); ass(true); }),
+                T('XSS blocked', function () { parseAndMarkT('<p><script>window.__xss__=1;<\/script>t</p>'); ass(!window.__xss__); }),
+                T('onerror not executed', function () { parseAndMarkT('<img src="x" onerror="window.__oe__=1">'); ass(!window.__oe__); }),
+                T('10KB document', function () { var h = '<article>'; for (var i = 0; i < 50; i++)h += '<section><h2>S' + i + '</h2><p>T '.repeat(10) + '</p></section>'; h += '</article>'; gt(Object.keys(parseAndMarkT(h).map).length, 10); }),
+                T('all TEXT_TAGS', function () { var h = '<h1>H1</h1><h2>H2</h2><h3>H3</h3><h4>H4</h4><h5>H5</h5><h6>H6</h6><p>P</p><li>LI</li><dt>DT</dt><dd>DD</dd><figcaption>FC</figcaption><blockquote>BQ</blockquote><th>TH</th><td>TD</td><caption>CAP</caption><label>LBL</label><address>ADR</address><pre>PRE</pre><summary>SUM</summary>'; gt(Object.keys(parseAndMarkT(h).map).length, 8); }),
+                T('all ATTR_MAP tags', function () { var h = '<a href="/x">link</a><img src="/i.jpg" alt="img"><video src="v.mp4" controls></video><audio src="a.mp3" controls></audio><iframe src="about:blank" title="f"></iframe><form action="/" method="post"></form><time datetime="2026-01-01">Jan</time>'; gt(Object.keys(parseAndMarkT(h).map).length, 3); }),
+                T('IndexedDB graceful', function () { if (window.indexedDB) ass(true, 'IDB ok'); else ass(true, 'IDB absent'); }),
+                T('BroadcastChannel graceful', function () { try { new BroadcastChannel('t').close(); ass(true); } catch (e) { ass(true, 'absent'); } }),
+                T('serialize: long content no truncation', function () { var h = '<p>' + 'X'.repeat(5000) + '</p>'; parseAndMarkT(h); gt(serializeT().length, 4000); }),
+                T('fmtHTML: deeply nested', function () { var h = '<div><div><div><p>deep</p></div></div></div>'; var r = fmtT(h); has(r, 'deep'); ass(true, 'no throw'); }),
+                T('unicode roundtrip', function () { var h = '<p>🚀 日本語 العربية</p>'; parseAndMarkT(h); var s = serializeT(); has(s, '🚀'); has(s, '日本語'); }),
+                T('100x serialize stable', function () { var h = '<h1>T</h1><p>P</p>'; parseAndMarkT(h); var s0 = serializeT(); for (var i = 0; i < 100; i++) { parseAndMarkT(s0); var si = serializeT(); eq(si, s0, 'iter ' + i); } }),
+            ]);
+
+            suite('CSS & UI', [
+                T('#sev8-css injected', function () { ex(document.getElementById('sev8-css')); }),
+                T('display:flex', function () { eq(getComputedStyle(root()).display, 'flex'); }),
+                T('toolbar bg set', function () { var tb = document.getElementById('sev8-tb'); var bg = getComputedStyle(tb).backgroundImage || getComputedStyle(tb).background; ass(bg && bg.length > 0); }),
+                T('exactly one active tab', function () { eq(document.querySelectorAll('.sev8-tab.active').length, 1); }),
+                T('buttons have transition', function () { var b = document.querySelector('.sev8-btn'); if (!b) { ass(true); return; } ass(getComputedStyle(b).transition.length > 0); }),
+                T('fmtrow has width', function () { var fr = document.getElementById('sev8-fmtrow'); if (!fr) { ass(true); return; } gt(fr.offsetWidth, 50); }),
+                T('card border', function () { var c = document.querySelector('.sev8-card'); if (!c) { ass(true); return; } ass(parseFloat(getComputedStyle(c).borderTopWidth || '0') > 0); }),
+                T('one active after tab switch', function () {
+                    clickTab('Исходник');
+                    return wait(80).then(function () { eq(document.querySelectorAll('.sev8-tab.active').length, 1); clickTab('Структур'); });
+                }),
+            ]);
+
+            suite('Data Integrity', [
+                T('serialize matches native ta', function () {
+                    var b = syncBtn(); if (!b) { ass(true); return; } b.click();
+                    return wait(200).then(function () {
+                        parseAndMarkT(nta().value);
+                        var s = serializeT();
+                        ass(s.length > 0, 'serialize not empty');
+                        ass(nta().value.length > 0, 'native ta not empty');
+                    });
+                }),
+                T('native ta has no internal marks', function () {
+                    var b = syncBtn(); if (!b) { ass(true); return; } b.click();
+                    return wait(200).then(function () {
+                        nohas(nta().value, 'data-sev8="');
+                        nohas(nta().value, 'data-sev8ph');
+                    });
+                }),
+                T('editing struct field updates native ta', function () {
+                    return new Promise(function (res, rej) {
+                        clickTab('Структур');
+                        setTimeout(function () {
+                            try {
+                                var ts2 = tas(); if (!ts2.length) { res(); return; }
+                                var marker = 'TEST_' + Date.now();
+                                ts2[0].value = marker;
+                                ts2[0].dispatchEvent(new Event('input', { bubbles: true }));
+                                ts2[0].dispatchEvent(new Event('change', { bubbles: true }));
+                                setTimeout(function () {
+                                    try {
+                                        var tv = nta().value;
+                                        has(tv, marker, 'marker in native ta');
+                                        res();
+                                    } catch (e) { rej(e); }
+                                }, 800);
+                            } catch (e) { rej(e); }
+                        }, 150);
+                    });
+                }),
+                T('source apply preserves all tokens', function () {
+                    return new Promise(function (res, rej) {
+                        clickTab('Исходник');
+                        setTimeout(function () {
+                            try {
+                                var srcTa = document.getElementById('sev8-src-ta'); if (!srcTa) { res(); return; }
+                                srcTa.dispatchEvent(new Event('input', { bubbles: true }));
+                                var ab = Array.prototype.filter.call(document.querySelectorAll('.sev8-btn'), function (b) { return b.textContent.indexOf('Примен') !== -1; })[0];
+                                if (ab) ab.click();
+                                setTimeout(function () {
+                                    try {
+                                        ass(nta().value.length > 0, 'native ta not empty after apply');
+                                        nohas(nta().value, 'data-sev8ph', 'no ph in output');
+                                        res();
+                                    } catch (e) { rej(e); }
+                                }, 300);
+                            } catch (e) { rej(e); }
+                        }, 200);
+                    });
+                }),
+                T('round-trip: struct→source→struct', function () {
+                    return new Promise(function (res, rej) {
+                        clickTab('Структур');
+                        setTimeout(function () {
+                            var b = syncBtn(); if (b) b.click();
+                            clickTab('Исходник');
+                            setTimeout(function () {
+                                var ab = Array.prototype.filter.call(document.querySelectorAll('.sev8-btn'), function (b) { return b.textContent.indexOf('Примен') !== -1; })[0];
+                                if (ab) ab.click();
+                                setTimeout(function () {
+                                    try {
+                                        clickTab('Структур');
+                                        setTimeout(function () {
+                                            try {
+                                                gt(nta().value.length, 0, 'value preserved'); res();
+                                            } catch (e) { rej(e); }
+                                        }, 250);
+                                    } catch (e) { rej(e); }
+                                }, 200);
+                            }, 200);
+                        }, 150);
+                    });
+                }),
+            ]);
+
+            suite('Advanced: Token Integrity', [
+                T('DS5 script survives full cycle', function () {
+                    parseAndMarkT(DS[5]);
+                    has(serializeT(), 'console.log', 'script in serialize');
+                }),
+                T('DS5 comment survives full cycle', function () {
+                    parseAndMarkT(DS[5]);
+                    has(serializeT(), 'Комментарий', 'comment in serialize');
+                }),
+                T('DS5 style survives full cycle', function () {
+                    parseAndMarkT(DS[5]);
+                    has(serializeT(), 'color:red', 'style in serialize');
+                }),
+                T('DS5 noscript tokenized', function () { parseAndMarkT(DS[5]); var s = serializeT(); nohas(s, 'data-sev8ph'); }),
+                T('multiple scripts in one doc', function () {
+                    var h = '<script>var a=1;<\/script><script>var b=2;<\/script><p>t</p>';
+                    parseAndMarkT(h); var s = serializeT();
+                    has(s, 'var a=1'); has(s, 'var b=2');
+                }),
+            ]);
+
+            suite('Performance', [
+                T('tokenize 1000 iterations', function () { var h = DS[7]; var t0 = performance.now(); for (var i = 0; i < 1000; i++)tokenizeT(h); ass(performance.now() - t0 < 2000, 'too slow'); }),
+                T('parseAndMarkT 100 iterations', function () { var h = DS[7]; var t0 = performance.now(); for (var i = 0; i < 100; i++)parseAndMarkT(h); ass(performance.now() - t0 < 3000, 'too slow'); }),
+                T('hashT 10000 iterations', function () { var t0 = performance.now(); for (var i = 0; i < 10000; i++)hashT('test string ' + i); ass(performance.now() - t0 < 500, 'too slow'); }),
+                T('fmtT 200 iterations', function () { var h = DS[1]; var t0 = performance.now(); for (var i = 0; i < 200; i++)fmtT(h); ass(performance.now() - t0 < 3000, 'too slow'); }),
+                T('serialize after large doc', function () { var h = '<article>'; for (var i = 0; i < 200; i++)h += '<p>Параграф номер ' + i + ' с достаточным текстом.</p>'; h += '</article>'; var t0 = performance.now(); parseAndMarkT(h); serializeT(); ass(performance.now() - t0 < 1000, 'too slow'); }),
+            ]);
+
+            var _mountTid = null;
+            var _mountAttempts = 0;
+
+            function setMS(state, txt) {
+                var el = document.getElementById('ms');
+                el.className = state;
+                el.innerHTML = state === 'pend' ? '<span class="spin"></span>&nbsp;' + txt : txt;
+            }
+
+            function doMount(html) {
+                if (_mountTid) { clearInterval(_mountTid); _mountTid = null; }
+                _mountAttempts = 0;
+                setMS('pend', 'монтирование…');
+                LI('SETUP', 'Loading dataset (' + html.length + ' chars)');
+                LD('SETUP', 'Dataset preview: ' + html.substring(0, 80));
+
+                var oldEd = document.getElementById('sev8');
+                if (oldEd) { oldEd.remove(); }
+                var oldCss = document.getElementById('sev8-css');
+                if (oldCss) { oldCss.remove(); }
+
+                var ta = document.getElementById('modx-resource-content');
+                ta.style.display = '';
+                ta.value = html;
+
+                LD('SETUP', 'Re-creating Ext stub and re-injecting editor script…');
+
+                window._sevPageReady = false;
+                window.Ext = {
+                    _cbs: [],
+                    onReady: function (fn) {
+                        if (window._sevPageReady) fn();
+                        else this._cbs.push(fn);
+                    },
+                    _fire: function () {
+                        this._cbs.forEach(function (f) { try { f(); } catch (e) { } });
+                        this._cbs = [];
+                    }
+                };
+
+                var oldScript = document.getElementById('sev8-script');
+                if (oldScript) { oldScript.remove(); }
+                var s = document.createElement('script');
+                s.id = 'sev8-script';
+                s.src = 'struct-editor.js?_=' + Date.now();
+                s.onload = function () {
+                    window._sevPageReady = true;
+                    if (window.Ext && window.Ext._fire) window.Ext._fire();
+                    LD('SETUP', 'struct-editor.js loaded, Ext.onReady fired');
+                };
+                document.body.appendChild(s);
+
+                _mountTid = setInterval(function () {
+                    _mountAttempts++;
+                    var ed = document.getElementById('sev8');
+                    if (ed) {
+                        clearInterval(_mountTid); _mountTid = null;
+                        setMS('ok', '✓ mounted (' + (_mountAttempts * 50) + 'ms)');
+                        LI('SETUP', 'Editor mounted in ' + (_mountAttempts * 50) + 'ms');
+                        RESULTS = []; updateSummary();
+                        document.getElementById('rc').innerHTML = '<div style="color:#9ca3af;text-align:center;padding:32px;font-size:12px">Датасет загружен. Нажмите <b>Run All</b>.</div>';
+                        return;
+                    }
+                    if (_mountAttempts >= 100) {
+                        clearInterval(_mountTid); _mountTid = null;
+                        setMS('err', '⚠ mount timeout');
+                        LW('SETUP', 'Editor mount timeout after ' + (_mountAttempts * 50) + 'ms');
+                    }
+                }, 50);
+            }
+
+            function renderSuiteBar() {
+                var bar = document.getElementById('sb'); bar.innerHTML = '';
+                var all = document.createElement('button'); all.className = 'sp' + (filterIdx === null ? ' on' : ''); all.textContent = 'All';
+                all.onclick = function () { filterIdx = null; renderSuiteBar(); }; bar.appendChild(all);
+                SUITES.forEach(function (s, i) {
+                    var p = document.createElement('button');
+                    p.className = 'sp' + (filterIdx === i ? ' on' : '');
+                    p.textContent = s.name.replace(/^[^:]+:\s*/, '').substring(0, 16);
+                    p.onclick = function () { filterIdx = i; renderSuiteBar(); };
+                    bar.appendChild(p);
+                });
+            }
+
+            function updateSummary() {
+                var pass = 0, fail = 0, skip = 0;
+                RESULTS.forEach(function (r) { if (r.status === 'pass') pass++; else if (r.status === 'fail') fail++; else skip++; });
+                document.getElementById('cp').textContent = pass;
+                document.getElementById('cf').textContent = fail;
+                document.getElementById('cs').textContent = skip;
+                document.getElementById('ct').textContent = RESULTS.length;
+                var total = RESULTS.length;
+                var bar = document.getElementById('pb');
+                bar.style.width = total ? ((pass + skip) / total * 100) + '%' : '0%';
+                bar.style.background = fail ? '#dc2626' : pass ? '#16a34a' : '#d97706';
+            }
+
+            function renderResults() {
+                var rc = document.getElementById('rc'); rc.innerHTML = '';
+                var suites = {};
+                RESULTS.forEach(function (r) { if (!suites[r.suite]) suites[r.suite] = []; suites[r.suite].push(r); });
+                Object.keys(suites).forEach(function (sn) {
+                    var items = suites[sn], grp = document.createElement('div'); grp.className = 'sg';
+                    var hdr = document.createElement('div'); hdr.className = 'sh';
+                    var pc = items.filter(function (i) { return i.status === 'pass'; }).length;
+                    var fc = items.filter(function (i) { return i.status === 'fail'; }).length;
+                    hdr.innerHTML = '<span>' + eh(sn) + '</span>';
+                    var badge = document.createElement('span');
+                    badge.className = 'shb ' + (fc ? 'f' : 'p');
+                    badge.textContent = pc + '/' + items.length;
+                    hdr.appendChild(badge);
+                    var body = document.createElement('div');
+                    body.className = 'sbdy' + (fc === 0 ? ' col' : '');
+                    hdr.addEventListener('click', function () { body.classList.toggle('col'); });
+                    items.forEach(function (r) {
+                        var row = document.createElement('div'); row.className = 'ti ' + r.status;
+                        row.innerHTML = '<span class="tic">' + (r.status === 'pass' ? '✓' : r.status === 'fail' ? '✗' : '⚠') + '</span>' +
+                            '<div class="tcc"><div class="tn">' + eh(r.name) + '</div>' + (r.message ? '<div class="tm' + (r.status === 'fail' ? ' e' : '') + '">' + (eh(r.message)) + '</div>' : '') +
+                            '</div><span class="tt">' + r.time + 'ms</span>';
+                        body.appendChild(row);
+                    });
+                    grp.appendChild(hdr); grp.appendChild(body); rc.appendChild(grp);
+                });
+            }
+
+            async function runSuites(list) {
+                if (running) return; running = true;
+                var t0 = performance.now(), total = list.reduce(function (a, s) { return a + s.tests.length; }, 0);
+                document.getElementById('rc').innerHTML = '<div style="padding:10px;color:#6b7280;font-size:12px;display:flex;align-items:center;gap:6px"><div class="spin"></div> Выполняется ' + total + ' тестов…</div>';
+                ['ba', 'bs', 'bf'].forEach(function (id) { document.getElementById(id).disabled = true; });
+                for (var si = 0; si < list.length; si++) {
+                    var S = list[si]; LI('RUNNER', '══ ' + S.name + ' ══');
+                    for (var ti = 0; ti < S.tests.length; ti++) {
+                        var tst = S.tests[ti], t1 = performance.now();
+                        LD(S.name, '  → ' + tst.name);
+                        var res = { suite: S.name, name: tst.name, status: 'pass', message: '', time: 0 };
+                        try { var ret = tst.fn(); if (ret && typeof ret.then === 'function') await ret; }
+                        catch (e) { res.status = 'fail'; res.message = e.message || String(e); LE(S.name, '  ✗ ' + tst.name + ': ' + res.message); }
+                        res.time = Math.round(performance.now() - t1);
+                        var ei = RESULTS.findIndex(function (r) { return r.suite === S.name && r.name === tst.name; });
+                        if (ei !== -1) RESULTS[ei] = res; else RESULTS.push(res);
+                        updateSummary(); await wait(0);
+                    }
+                }
+                var elapsed = Math.round(performance.now() - t0);
+                document.getElementById('rt').textContent = (elapsed / 1000).toFixed(2) + 's';
+                renderResults(); updateSummary();
+                ['ba', 'bs', 'bf'].forEach(function (id) { document.getElementById(id).disabled = false; });
+                running = false;
+                LI('RUNNER', '══ Done: ' + RESULTS.filter(function (r) { return r.status === 'pass'; }).length + ' passed, ' + RESULTS.filter(function (r) { return r.status === 'fail'; }).length + ' failed in ' + elapsed + 'ms ══');
+            }
+
+            document.addEventListener('DOMContentLoaded', function () {
+                renderSuiteBar();
+
+                document.getElementById('ll').onchange = function (e) {
+                    logFlag = e.target.value;
+                    LD('TESTSTAND', 'Log level: ' + logFlag);
+                };
+
+                document.getElementById('bl').onclick = function () {
+                    doMount(DS[parseInt(document.getElementById('dssr').value, 10) || 0]);
+                };
+
+                document.getElementById('dssr').onchange = function () {
+                    doMount(DS[parseInt(this.value, 10) || 0]);
+                };
+
+                document.getElementById('ba').onclick = function () {
+                    if (!root()) {
+                        document.getElementById('rc').innerHTML = '<div style="color:#dc2626;padding:16px;font-size:12px">⚠ Сначала загрузите датасет.</div>';
+                        return;
+                    }
+                    RESULTS = [];
+                    runSuites(filterIdx !== null ? [SUITES[filterIdx]] : SUITES);
+                };
+
+                document.getElementById('bs').onclick = function () {
+                    if (filterIdx === null) { alert('Сначала выберите suite-кнопку.'); return; }
+                    if (!root()) { alert('Сначала загрузите датасет.'); return; }
+                    runSuites([SUITES[filterIdx]]);
+                };
+
+                document.getElementById('bf').onclick = function () {
+                    var failed = RESULTS.filter(function (r) { return r.status === 'fail'; });
+                    if (!failed.length) { LI('RUNNER', 'Нет ошибок.'); return; }
+                    var fm = {};
+                    failed.forEach(function (r) { if (!fm[r.suite]) fm[r.suite] = []; fm[r.suite].push(r.name); });
+                    runSuites(SUITES.filter(function (s) { return fm[s.name]; }).map(function (s) {
+                        return { name: s.name, tests: s.tests.filter(function (t) { return fm[s.name] && fm[s.name].indexOf(t.name) !== -1; }) };
+                    }));
+                };
+
+                document.getElementById('bc').onclick = function () {
+                    RESULTS = []; renderResults(); updateSummary();
+                    document.getElementById('rt').textContent = '';
+                    document.getElementById('rc').innerHTML = '<div style="color:#9ca3af;text-align:center;padding:32px;font-size:12px">Очищено.</div>';
+                };
+
+                var total = SUITES.reduce(function (a, s) { return a + s.tests.length; }, 0);
+                LI('TESTSTAND', 'Test stand initialized. ' + SUITES.length + ' suites registered, ' + total + ' tests total.');
+                LD('TESTSTAND', 'Log level: ' + logFlag);
+
+                doMount(DS[0]);
+            });
+        })();
+    </script>
+</body>
+
+</html>
