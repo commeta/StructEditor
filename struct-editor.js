@@ -1,6 +1,6 @@
 /*
  * ╔══════════════════════════════════════════════════════════════════════╗
- * ║  StructEditor v1.0 — MODX Revolution 2.8                           ║
+ * ║  StructEditor v1.0 — MODX Revolution 2.8                             ║
  * ╠══════════════════════════════════════════════════════════════════════╣
  * ║  Установка: плагин на событие OnManagerPageBeforeRender              ║
  * ║    $modx->controller->addJavascript('/assets/theme/editor.js');      ║
@@ -95,10 +95,14 @@
 
     /*
      * Атрибуты, показываемые всегда (даже если отсутствуют в DOM).
-     * Для <a> href обязателен.
+     * Для <a> href обязателен; rel/title нужны при создании с нуля.
+     * Для <img> src и alt — базовые поля доступности.
+     * Для <iframe> src и title — обязательны по стандарту.
      */
     ATTR_ALWAYS: {
-      a: { href: 1, target: 1 },
+      a: { href: 1, target: 1, rel: 1, title: 1 },
+      img: { src: 1, alt: 1 },
+      iframe: { src: 1, title: 1 },
     },
 
     /*
@@ -395,7 +399,12 @@
     }
 
     if (isAttr) {
-      if (!hasEditableDescendant(node)) {
+      /* ATTR_HAS_TEXT-теги (a, button, time, data) — всегда атомарны:
+         вложенные span/em/strong/b/i — форматирование текста ссылки/кнопки,
+         не самостоятельные редактируемые объекты. Без этой проверки
+         <a><span>текст</span></a> терял бы href/target/rel из S.map. */
+      var forceAtomic = !!CFG.ATTR_HAS_TEXT[tag];
+      if (forceAtomic || !hasEditableDescendant(node)) {
         var id2 = 'n' + (++S.idx);
         node.setAttribute(CFG.MARK, id2);
 
