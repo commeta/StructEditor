@@ -1640,16 +1640,73 @@
     setTimeout(function () { bindVFrame(fr); }, 120);
   }
 
+  /* Возвращает путь дочерних индексов от ancestor до descendant (или null) */
+  function getPathFromAncestor(ancestor, descendant) {
+    var path = [], cur = descendant;
+    while (cur && cur !== ancestor) {
+      var par = cur.parentElement; if (!par) return null;
+      path.unshift(Array.prototype.indexOf.call(par.children, cur));
+      cur = par;
+    }
+    return cur === ancestor ? path : null;
+  }
+
+  /* Следует по пути дочерних индексов от root */
+  function followPath(root, path) {
+    var cur = root;
+    for (var i = 0; i < path.length; i++) {
+      if (!cur || !cur.children[path[i]]) return null;
+      cur = cur.children[path[i]];
+    }
+    return cur;
+  }
+
   function bindVFrame(fr) {
     var iDoc = fr.contentDocument || fr.contentWindow.document; if (!iDoc) return;
     iDoc.addEventListener('click', function (e) { e.preventDefault(); }, true);
     iDoc.addEventListener('click', function (e) {
+      /* — найти ближайший помеченный контейнер — */
       var marked = null, cur = e.target;
       while (cur && cur !== iDoc.body) {
         if (cur.getAttribute && cur.getAttribute(CFG.MARK)) { marked = cur; break; }
         cur = cur.parentElement;
       }
       if (!marked) { closeOvl(); return; }
+
+      /* — проверить: клик попал на атомарный элемент (a, img, video, iframe…)
+           внутри контейнера, у которого нет собственной маркировки — */
+      var atomic = null, cur2 = e.target;
+      while (cur2 && cur2 !== marked) {
+        var t2 = cur2.tagName && cur2.tagName.toLowerCase();
+        if (t2 && CFG.ATTR_MAP[t2] && !cur2.getAttribute(CFG.MARK)) {
+          atomic = cur2; break;
+        }
+        cur2 = cur2.parentElement;
+      }
+      if (atomic) {
+        var id = marked.getAttribute(CFG.MARK);
+        var srcContainer = S.map[id] && S.map[id].node;
+        if (srcContainer) {
+          var path = getPathFromAncestor(marked, atomic);
+          var srcAtomic = path ? followPath(srcContainer, path) : null;
+          if (srcAtomic) {
+            Array.prototype.forEach.call(iDoc.querySelectorAll('.sev8-active'),
+              function (el) { el.classList.remove('sev8-active'); });
+            atomic.classList.add('sev8-active');
+            var tag = atomic.tagName.toLowerCase();
+            var hasBody = !!CFG.ATTR_HAS_TEXT[tag] &&
+              (srcAtomic.textContent || '').trim().length > 0;
+            var synInfo = {
+              node: srcAtomic, tag: tag,
+              type: hasBody ? 'both' : 'attrs',
+              attrs: CFG.ATTR_MAP[tag]
+            };
+            showOvl(fr, atomic, synInfo, null);
+            return;
+          }
+        }
+      }
+
       openEdit(fr, marked, marked.getAttribute(CFG.MARK));
     }, false);
     iDoc.addEventListener('submit', function (e) { e.preventDefault(); }, true);
