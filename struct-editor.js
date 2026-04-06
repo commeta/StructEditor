@@ -450,14 +450,28 @@
   }
 
   function syncNow() {
+    // Если мы во вкладке "Исходник", сначала применяем текст из него
+    if (S.activeTab === 'source' && S.srcTa) {
+      var srcHtml = S.srcTa.value;
+      if (srcHtml !== S.rawHtml) {
+        S.rawHtml = srcHtml;
+        parseAndMark(S.rawHtml);
+        histPush(S.rawHtml);
+      }
+    }
+
     if (!S.doc) return;
     var html = serialize();
     S.rawHtml = html;
     writeHTML(html);
-    if (S.srcTa) S.srcTa.value = html;
+
+    // Не перезаписываем textarea исходника, если юзер в данный момент там печатает
+    if (S.srcTa && S.activeTab !== 'source') S.srcTa.value = html;
+
     histPush(html);
     setStatus('Синхронизировано ✓', 2000);
   }
+
   var lazySync = debounce(syncNow, 600);
 
   /* ════════ ПОИСК НАТИВНОГО TEXTAREA ════════ */
@@ -1866,7 +1880,16 @@
     ta.addEventListener('input', function () { updateStatus(); setStatus('● изменено'); });
     ta.addEventListener('keydown', function (e) {
       if ((e.ctrlKey || e.metaKey) && (e.key === 's' || e.key === 'Enter')) {
-        e.preventDefault(); applySource(); setStatus('Применено ✓', 2000);
+        e.preventDefault();
+        applySource(); // Применяем изменения во внутренний DOM редактора
+
+        // Если это именно Ctrl+S, прокидываем сохранение в MODX
+        if (e.key === 's') {
+          syncNow();
+          clickModxSave();
+        } else {
+          setStatus('Применено ✓', 2000);
+        }
       }
       if (e.key === 'Tab') {
         e.preventDefault();
@@ -2021,7 +2044,11 @@
   /* ════════ ХУКИ СОХРАНЕНИЯ ════════ */
   function hookSave() {
     D.addEventListener('keydown', function (e) {
-      if ((e.ctrlKey || e.metaKey) && e.key === 's') { syncNow(); clickModxSave(); }
+      if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+        e.preventDefault(); // Обязательно блокируем браузерное диалоговое окно
+        syncNow();
+        clickModxSave();
+      }
     }, false);
     var form = D.querySelector('form.x-form');
     if (form) form.addEventListener('submit', syncNow, true);
@@ -2031,7 +2058,20 @@
       mo.observe(D.body, { childList: true, subtree: false });
       setTimeout(function () { mo.disconnect(); }, 30000);
     }
-    if (W.MODx && MODx.on) { try { MODx.on('beforeSave', syncNow); } catch (e) { } }
+
+    // Более глубокая интеграция с событиями ресурса MODX
+    if (W.Ext && W.MODx) {
+      try {
+        MODx.on('beforeSave', syncNow);
+        MODx.on('beforeSubmit', syncNow);
+
+        // Прямой перехват панели ресурса (самый надежный способ в MODX)
+        var resPanel = Ext.getCmp('modx-panel-resource');
+        if (resPanel) {
+          resPanel.on('beforeSubmit', syncNow);
+        }
+      } catch (e) { }
+    }
   }
 
   function hookModxButtons() {
@@ -2189,6 +2229,7 @@
         return html;
       },
     };
+
     L('Test-mode: window._sev8 exported');
   }
 
